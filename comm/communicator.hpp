@@ -1,0 +1,7 @@
+namespace minimalCoupler
+{
+    class Communicator
+    {
+
+    };
+}
