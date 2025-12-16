@@ -1,4 +1,6 @@
 #include "Participant.hpp"
+#include "fluid/FluidParticipantImpl.hpp"
+#include "solid/SolidParticipantImpl.hpp"
 
 namespace precice
 {
@@ -12,7 +14,22 @@ Participant::Participant(
     // create appropriate participant based on participantName
     if (participantName == "Fluid")
     {
-        _impl = std::make_unique<
+        _impl = std::make_unique<MinimalCoupler::FluidParticipantImplementation>(
+            std::move(participantName),
+            std::move(configurationFileName),
+            solverProcessIndex,
+            solverProcessSize
+        );
+    } 
+    else if (participantName == "Solid") 
+    {
+
+        _impl = std::make_unique<MinimalCoupler::SolidParticipantImplementation>(
+            std::move(participantName),
+            std::move(configurationFileName),
+            solverProcessIndex,
+            solverProcessSize
+        );
     }
 }
 

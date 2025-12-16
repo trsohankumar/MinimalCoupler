@@ -2,7 +2,14 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 #include "impl/ParticipantImpl.hpp"
+
+namespace MinimalCoupler
+{
+  class FluidParticipantImplementation;
+  class SolidParticipantImplementation;
+}
 
 namespace precice
 {
@@ -57,12 +64,6 @@ public:
     void stopLastProfilingSection();
 
 private:
-    std::string _participantName;
-    std::string _configFileName;
-    int _rank;
-    int _size;
-    bool _isInitialized;
-    int _timeWindowCount;
 
     std::unique_ptr<MinimalCoupler::ParticipantImplementation> _impl;
 };

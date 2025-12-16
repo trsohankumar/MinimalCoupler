@@ -1,3 +1,5 @@
+#pragma once
+
 #include<string>
 #include<vector>
 
@@ -6,12 +8,6 @@ namespace MinimalCoupler
 class ParticipantImplementation
 {
 public:
-    ParticipantImplementation(
-      std::string participantName,
-      std::string configurationFileName,
-      int         solverProcessIndex,
-      int         solverProcessSize);
-
     virtual ~ParticipantImplementation() = default;
 
     // Mesh methods
@@ -58,8 +54,6 @@ private:
     std::string _configFileName;
     int _rank;
     int _size;
-    bool _isInitialized;
-    int _timeWindowCount;
 
 };
 }
