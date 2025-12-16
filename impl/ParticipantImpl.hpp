@@ -8,6 +8,13 @@ namespace MinimalCoupler
 class ParticipantImplementation
 {
 public:
+
+    ParticipantImplementation(
+        std::string participantName,
+        std::string configurationFileName,
+        int         solverProcessIndex,
+        int         solverProcessSize);
+
     virtual ~ParticipantImplementation() = default;
 
     // Mesh methods

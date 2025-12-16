@@ -6,7 +6,7 @@ namespace MinimalCoupler
 {
     class FluidParticipantImplementation: public ParticipantImplementation
     {
-
+    public:
         FluidParticipantImplementation(
         std::string participantName,
         std::string configurationFileName,
@@ -15,5 +15,33 @@ namespace MinimalCoupler
 
         FluidParticipantImplementation() = default;
 
+        
+        // Mesh methods
+        int getMeshDimensions(const std::string& meshName) const override;
+
+        void setMeshVertices(const std::string& meshName, const std::vector<double>& positions,
+            std::vector<int>& ids) override;
+
+        // Data exchange methods
+        void readData(const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, double relativeReadTime, std::vector<double>& values) const override;
+
+        void writeData( const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, const std::vector<double>& values) override;
+
+        // Steering methods
+        void initialize() override;
+        void advance(double computedTimeStepSize) override;
+        void finalize() override;
+
+        // Status queries
+        bool isCouplingOngoing() const override;
+        bool requiresInitialData() const override;
+        bool requiresWritingCheckpoint() const override;
+        bool requiresReadingCheckpoint() const override;
+
+        double getMaxTimeStepSize() const override;
+
+        // Profiling
+        void startProfilingSection(const std::string& name) override;
+        void stopLastProfilingSection() override;
     };
 }

@@ -31,6 +31,10 @@ Participant::Participant(
             solverProcessSize
         );
     }
+    else 
+    {
+        throw std::invalid_argument("Unknown participant name:" + participantName);
+    }
 }
 
 int Participant::getMeshDimensions(const std::string& meshName) const
