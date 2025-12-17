@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ParticipantImpl.hpp"
+#include "impl/ParticipantImpl.hpp"
 
 namespace MinimalCoupler
 {
