@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "impl/ParticipantImpl.hpp"
+#include "ParticipantImpl.hpp"
 
 namespace MinimalCoupler
 {

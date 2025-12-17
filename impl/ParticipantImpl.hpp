@@ -18,12 +18,12 @@ public:
     virtual ~ParticipantImplementation() = default;
 
     // Mesh methods
-    virtual int getMeshDimensions(const std::string& meshName) const;
+    virtual int getMeshDimensions(const std::string& meshName) const = 0;
 
     virtual void setMeshVertices(
       const std::string& meshName,
       const std::vector<double>& positions,
-      std::vector<int>& ids);
+      std::vector<int>& ids) = 0;
 
     // Data exchange methods
     virtual void readData(
@@ -31,30 +31,30 @@ public:
       const std::string& dataName,
       const std::vector<int>& vertexIDs,
       double relativeReadTime,
-      std::vector<double>& values) const;
+      std::vector<double>& values) const = 0;
 
     virtual void writeData(
       const std::string& meshName,
       const std::string& dataName,
       const std::vector<int>& vertexIDs,
-      const std::vector<double>& values);
+      const std::vector<double>& values) = 0;
 
     // Steering methods
-    virtual void initialize();
-    virtual void advance(double computedTimeStepSize);
-    virtual void finalize();
+    virtual void initialize() = 0;
+    virtual void advance(double computedTimeStepSize) = 0;
+    virtual void finalize() = 0;
 
     // Status queries
-    virtual bool isCouplingOngoing() const;
-    virtual bool requiresInitialData() const;
-    virtual bool requiresWritingCheckpoint() const;
-    virtual bool requiresReadingCheckpoint() const;
+    virtual bool isCouplingOngoing() const = 0;
+    virtual bool requiresInitialData() const = 0;
+    virtual bool requiresWritingCheckpoint() const = 0;
+    virtual bool requiresReadingCheckpoint() const = 0;
 
-    virtual double getMaxTimeStepSize() const;
+    virtual double getMaxTimeStepSize() const = 0;
 
     // Profiling
-    virtual void startProfilingSection(const std::string& name);
-    virtual void stopLastProfilingSection();
+    virtual void startProfilingSection(const std::string& name) = 0;
+    virtual void stopLastProfilingSection() = 0;
 
 private:
     std::string _participantName;

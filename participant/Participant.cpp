@@ -1,7 +1,8 @@
 #include "Participant.hpp"
-#include "fluid/FluidParticipantImpl.hpp"
-#include "solid/SolidParticipantImpl.hpp"
+#include "FluidParticipantImpl.hpp"
+#include "SolidParticipantImpl.hpp"
 
+#include<stdexcept>
 namespace precice
 {
 
@@ -39,7 +40,7 @@ Participant::Participant(
 
 int Participant::getMeshDimensions(const std::string& meshName) const
 {
-    _impl->getMeshDimensions(meshName);
+    return _impl->getMeshDimensions(meshName);
 }
 
 void Participant::setMeshVertices(const std::string& meshName, const std::vector<double>& positions,std::vector<int>& ids)

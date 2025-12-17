@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdexcept>
+#include <iostream>
 
 namespace MinimalCoupler
 {
@@ -18,16 +19,25 @@ namespace MinimalCoupler
     void FluidParticipantImplementation::initialize()
     {
         //1. Preprocess any meshes
+        std::cout << "[FLUID] Starting initialization..." << std::endl;
 
         //2. Setup communication between Fluid and solid participants
+        std::cout << "[FLUID] Waiting for Solid to connect..." << std::endl;
         solidSocket = getSolidConnectionSocket();
+        std::cout << "[FLUID] Solid connected! Socket: " << solidSocket << std::endl;
+
         //3. Transfer vertices from participant sender to receiver
+
+        std::string message = "Hello Solid. This is from Fluid";
+        send(solidSocket, message.c_str(), message.size(), 0);
+        std::cout << "[FLUID] Sent message to Solid: " << message << std::endl;
 
         //4. Initialize the coupling scheme
 
         //5. Transfer Write Data
 
         //6. Transfer Read Data
+        std::cout << "[FLUID] Initialization complete!" << std::endl;
     }
 
 
@@ -42,7 +52,7 @@ namespace MinimalCoupler
         sockaddr_in serverAddress;
         serverAddress.sin_family  = AF_INET;
         serverAddress.sin_port = htons(5001);
-        serverAddress.sin_addr.s_addr = INADDR_ANY;
+        serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);  // Convert to network byte order
 
         if (bind(sock, reinterpret_cast<struct sockaddr*>(&serverAddress), sizeof(serverAddress)) < 0)
         {
@@ -65,5 +75,71 @@ namespace MinimalCoupler
 
         close(sock);
         return client;
+    }
+
+    int FluidParticipantImplementation::getMeshDimensions(const std::string& meshName) const
+    {
+        return 1;
+    }
+
+    void FluidParticipantImplementation::setMeshVertices(const std::string& meshName, const std::vector<double>& positions,
+        std::vector<int>& ids)
+    {
+
+    }
+
+    void FluidParticipantImplementation::readData(const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, double relativeReadTime, std::vector<double>& values) const
+    {
+
+    }
+
+    void FluidParticipantImplementation::writeData(const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, const std::vector<double>& values)
+    {
+
+    }
+
+    void FluidParticipantImplementation::advance(double computedTimeStepSize)
+    {
+
+    }
+
+    void FluidParticipantImplementation::finalize()
+    {
+        close(solidSocket);
+    }
+
+    bool FluidParticipantImplementation::isCouplingOngoing() const
+    {
+        return false;
+    }
+
+    bool FluidParticipantImplementation::requiresInitialData() const
+    {
+        return false;
+    }
+
+    bool FluidParticipantImplementation::requiresWritingCheckpoint() const
+    {
+        return false;
+    }
+
+    bool FluidParticipantImplementation::requiresReadingCheckpoint() const
+    {
+        return false;
+    }
+
+    double FluidParticipantImplementation::getMaxTimeStepSize() const
+    {
+        return 1.0;
+    }
+
+    void FluidParticipantImplementation::startProfilingSection(const std::string& name)
+    {
+
+    }
+
+    void FluidParticipantImplementation::stopLastProfilingSection()
+    {
+
     }
 }

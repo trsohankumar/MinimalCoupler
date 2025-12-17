@@ -1,3 +1,3 @@
 #pragma once
 
-#include <precice/Participant.hpp>
+#include "../participant/Participant.hpp"
