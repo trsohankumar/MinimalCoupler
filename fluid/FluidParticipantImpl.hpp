@@ -43,5 +43,9 @@ namespace MinimalCoupler
         // Profiling
         void startProfilingSection(const std::string& name) override;
         void stopLastProfilingSection() override;
+
+    private:
+        int getSolidConnectionSocket();
+        int solidSocket;
     };
 }

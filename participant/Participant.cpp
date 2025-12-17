@@ -39,76 +39,71 @@ Participant::Participant(
 
 int Participant::getMeshDimensions(const std::string& meshName) const
 {
-    return 0;
+    _impl->getMeshDimensions(meshName);
 }
 
-void Participant::setMeshVertices(
-    const std::string& meshName,
-    const std::vector<double>& positions,
-    std::vector<int>& ids)
+void Participant::setMeshVertices(const std::string& meshName, const std::vector<double>& positions,std::vector<int>& ids)
 {
+    _impl->setMeshVertices(meshName, positions, ids);
 }
 
-void Participant::readData(
-    const std::string& meshName,
-    const std::string& dataName,
-    const std::vector<int>& vertexIDs,
-    double relativeReadTime,
-    std::vector<double>& values) const
+void Participant::readData( const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, double relativeReadTime, std::vector<double>& values) const
 {
+    _impl->readData(meshName, dataName, vertexIDs, relativeReadTime, values);
 }
 
-void Participant::writeData(
-    const std::string& meshName,
-    const std::string& dataName,
-    const std::vector<int>& vertexIDs,
-    const std::vector<double>& values)
+void Participant::writeData(const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, const std::vector<double>& values)
 {
+    _impl->writeData(meshName, dataName, vertexIDs, values);
 }
 
 void Participant::initialize()
 {
+    _impl->initialize();
 }
 
 void Participant::advance(double computedTimeStepSize)
 {
+    _impl->advance(computedTimeStepSize);
 }
 
 void Participant::finalize()
 {
+    _impl->finalize();
 }
 
 bool Participant::isCouplingOngoing() const
 {
-    return false;
+    return _impl->isCouplingOngoing();
 }
 
 bool Participant::requiresInitialData() const
 {
-    return false;
+    return _impl->requiresInitialData();
 }
 
 bool Participant::requiresWritingCheckpoint() const
 {
-    return false;
+    return _impl->requiresWritingCheckpoint();
 }
 
 bool Participant::requiresReadingCheckpoint() const
 {
-    return false;
+    return _impl->requiresReadingCheckpoint();
 }
 
 double Participant::getMaxTimeStepSize() const
 {
-    return 0.0;
+    return _impl->getMaxTimeStepSize();
 }
 
 void Participant::startProfilingSection(const std::string& name)
 {
+    _impl->startProfilingSection(name);
 }
 
 void Participant::stopLastProfilingSection()
 {
+    _impl->stopLastProfilingSection();
 }
-
 } // namespace precice
