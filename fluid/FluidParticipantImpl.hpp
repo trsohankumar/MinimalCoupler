@@ -45,7 +45,7 @@ namespace MinimalCoupler
         void stopLastProfilingSection() override;
 
     private:
-        int getSolidConnectionSocket();
+        int getSolidConnectionSocket() const;
         int solidSocket;
     };
 }

@@ -31,7 +31,7 @@ namespace MinimalCoupler
     }
 
 
-    int FluidParticipantImplementation::getSolidConnectionSocket()
+    int FluidParticipantImplementation::getSolidConnectionSocket() const
     {
         int sock = socket(AF_INET, SOCK_STREAM, 0);
         if (sock < 0)
@@ -56,14 +56,14 @@ namespace MinimalCoupler
             throw std::runtime_error("Unable to listen on socket");
         }
 
-        int solidSocket = accept(sock, nullptr, nullptr);
-        if (solidSocket < 0)
+        int client = accept(sock, nullptr, nullptr);
+        if (client < 0)
         {
             close(sock);
             throw std::runtime_error("Unable to accept connection request from the client");
         }
 
         close(sock);
-        return solidSocket;
+        return client;
     }
 }
