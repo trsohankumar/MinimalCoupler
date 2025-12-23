@@ -47,7 +47,7 @@ namespace MinimalCoupler
 
     private:
         int getFluidConnectionSocket() const;
-        std::unordered_map<std::string, Mesh> _meshes;
+        std::unordered_map<std::string, std::unique_ptr<Mesh>> _meshes;
         int fluidSocket;
     };
 }

@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdexcept>
 #include <iostream>
+#include <memory>
 
 #include "SolidParticipantImpl.hpp"
 
@@ -14,6 +15,13 @@ namespace MinimalCoupler
     std::string configurationFileName,int solverProcessIndex, int solverProcessSize)
         : ParticipantImplementation(participantName, configurationFileName, solverProcessIndex, solverProcessSize), fluidSocket(-1)
     {
+        auto providedMesh = std::make_unique<Mesh>();
+        providedMesh->setMeshName(_participantName + "-Mesh");
+        providedMesh->addDataToMesh("Force");
+        providedMesh->addDataToMesh("Displacement");
+
+        _meshes[providedMesh->getMeshName()] = std::move(providedMesh);
+
 
     }
 
