@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+#include "data/Mesh.hpp"
 #include "impl/ParticipantImpl.hpp"
 
 namespace MinimalCoupler
@@ -45,6 +47,7 @@ namespace MinimalCoupler
 
     private:
         int getFluidConnectionSocket() const;
+        std::unordered_map<std::string, Mesh> _meshes;
         int fluidSocket;
     };
 }

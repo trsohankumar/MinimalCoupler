@@ -56,8 +56,9 @@ public:
     virtual void startProfilingSection(const std::string& name) = 0;
     virtual void stopLastProfilingSection() = 0;
 
-private:
+protected:
     std::string _participantName;
+    std::string _remoteParticipantName;
     std::string _configFileName;
     int _rank;
     int _size;

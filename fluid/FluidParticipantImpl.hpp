@@ -1,6 +1,9 @@
 #pragma once
 
+#include<memory>
+
 #include "impl/ParticipantImpl.hpp"
+#include "data/Mesh.hpp"
 
 namespace MinimalCoupler
 {
@@ -47,5 +50,6 @@ namespace MinimalCoupler
     private:
         int getSolidConnectionSocket() const;
         int solidSocket;
+        std::unordered_map<std::string, std::unique_ptr<Mesh>> _meshes;
     };
 }

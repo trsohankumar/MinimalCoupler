@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdexcept>
+#include <memory>
 #include <iostream>
 
 namespace MinimalCoupler
@@ -13,6 +14,19 @@ namespace MinimalCoupler
     std::string configurationFileName,int solverProcessIndex, int solverProcessSize)
         : ParticipantImplementation(participantName, configurationFileName, solverProcessIndex, solverProcessSize), solidSocket(-1)
     {
+        auto providedMesh = std::make_unique<Mesh>();
+        providedMesh->setMeshName(_participantName + "-Mesh");
+        providedMesh->addDataToMesh("Force");
+        providedMesh->addDataToMesh("Displacement");
+
+        _meshes[providedMesh->getMeshName()] = std::move(providedMesh);
+
+        auto receivedMesh = std::make_unique<Mesh>();
+        receivedMesh->setMeshName(_remoteParticipantName + "-Mesh");
+        receivedMesh->addDataToMesh("Force");
+        receivedMesh->addDataToMesh("Displacement");
+
+        _meshes[receivedMesh->getMeshName()] = std::move(providedMesh);
 
     }
 
