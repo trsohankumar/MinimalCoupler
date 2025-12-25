@@ -96,8 +96,7 @@ namespace MinimalCoupler
         return 1;
     }
 
-    void FluidParticipantImplementation::setMeshVertices(const std::string& meshName, const std::vector<double>& positions,
-        std::vector<int>& ids)
+    void FluidParticipantImplementation::     setMeshVertices( precice::string_view meshName, precice::span< const double > coordinates, ::precice::span< VertexID > ids)
     {
 
     }

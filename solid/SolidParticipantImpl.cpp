@@ -81,8 +81,7 @@ namespace MinimalCoupler
         return 1;
     }
 
-    void SolidParticipantImplementation::setMeshVertices(const std::string& meshName, const std::vector<double>& positions,
-        std::vector<int>& ids)
+    void SolidParticipantImplementation::setMeshVertices( precice::string_view meshName,        precice::span< const double > coordinates,precice::span< VertexID > ids)
     {
         
     }

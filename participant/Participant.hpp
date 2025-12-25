@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "ParticipantImpl.hpp"
+#include "impl/ParticipantImpl.hpp"
+#include "precice/types.hpp"
 
 namespace MinimalCoupler
 {
@@ -28,9 +29,8 @@ public:
     int getMeshDimensions(const std::string& meshName) const;
 
     void setMeshVertices(
-      const std::string& meshName,
-      const std::vector<double>& positions,
-      std::vector<int>& ids);
+      ::precice::string_view meshName,
+      ::precice::span< const double > coordinates, ::precice::span< VertexID > ids);
 
     // Data exchange methods
     void readData(

@@ -43,7 +43,8 @@ int Participant::getMeshDimensions(const std::string& meshName) const
     return _impl->getMeshDimensions(meshName);
 }
 
-void Participant::setMeshVertices(const std::string& meshName, const std::vector<double>& positions,std::vector<int>& ids)
+void Participant::setMeshVertices(::precice::string_view meshName,
+::precice::span< const double > coordinates, ::precice::span< VertexID > ids)
 {
     _impl->setMeshVertices(meshName, positions, ids);
 }

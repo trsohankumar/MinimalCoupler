@@ -19,9 +19,10 @@ namespace MinimalCoupler
 
         // Mesh methods
         int getMeshDimensions(const std::string& meshName) const override;
-
-        void setMeshVertices(const std::string& meshName, const std::vector<double>& positions,
-            std::vector<int>& ids) override;
+        
+        void setMeshVertices(
+        precice::string_view meshName,
+        precice::span< const double > coordinates, ::precice::span< VertexID > ids) override;
 
         // Data exchange methods
         void readData(const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, double relativeReadTime, std::vector<double>& values) const override;

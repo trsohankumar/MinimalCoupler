@@ -2,9 +2,12 @@
 
 #include<string>
 #include<vector>
+#include "precice/types.hpp"
 
 namespace MinimalCoupler
 {
+using VertexID = int;
+
 class ParticipantImplementation
 {
 public:
@@ -21,9 +24,8 @@ public:
     virtual int getMeshDimensions(const std::string& meshName) const = 0;
 
     virtual void setMeshVertices(
-      const std::string& meshName,
-      const std::vector<double>& positions,
-      std::vector<int>& ids) = 0;
+      precice::string_view meshName,
+      precice::span< const double > coordinates, ::precice::span< VertexID > ids) = 0;
 
     // Data exchange methods
     virtual void readData(
