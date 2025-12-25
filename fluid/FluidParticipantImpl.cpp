@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <memory>
 #include <iostream>
+#include "data/Point.hpp"
 
 namespace MinimalCoupler
 {
@@ -18,15 +19,17 @@ namespace MinimalCoupler
         providedMesh->setMeshName(_participantName + "-Mesh");
         providedMesh->addDataToMesh("Force");
         providedMesh->addDataToMesh("Displacement");
+        providedMesh->setMeshDimensions(2);
 
-        _meshes[providedMesh->getMeshName()] = std::move(providedMesh);
+        _meshes[std::string(providedMesh->getMeshName())] = std::move(providedMesh);
 
         auto receivedMesh = std::make_unique<Mesh>();
         receivedMesh->setMeshName(_remoteParticipantName + "-Mesh");
         receivedMesh->addDataToMesh("Force");
         receivedMesh->addDataToMesh("Displacement");
+        receivedMesh->setMeshDimensions(2);
 
-        _meshes[receivedMesh->getMeshName()] = std::move(providedMesh);
+        _meshes[std::string(receivedMesh->getMeshName())] = std::move(receivedMesh);
 
     }
 
@@ -96,8 +99,22 @@ namespace MinimalCoupler
         return 1;
     }
 
-    void FluidParticipantImplementation::     setMeshVertices( precice::string_view meshName, precice::span< const double > coordinates, ::precice::span< VertexID > ids)
+    void FluidParticipantImplementation::setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates, precice::span<VertexID> ids)
     {
+        auto& mesh = _meshes[std::string(meshName)];
+        int dim = mesh->getMeshDimensions();
+
+        std::vector<Point> vertices;
+        vertices.reserve(coordinates.size() / dim);
+
+        for (size_t i = 0; i < coordinates.size(); i += dim)
+        {
+            vertices.emplace_back(coordinates[i], coordinates[i+1]);
+            ids[i/dim] = static_cast<VertexID>(i/dim);
+        }
+
+        mesh->setMeshVertices(vertices);
+        mesh->allocateDataFields();
 
     }
 

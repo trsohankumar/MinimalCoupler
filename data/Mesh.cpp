@@ -36,5 +36,17 @@ void Mesh::setMeshDimensions(int dimensions)
     _dimensions = dimensions;
 }
 
+size_t Mesh::getVertexCount() const
+{
+    return _vertices.size();
+}
+
+void Mesh::allocateDataFields()
+{
+    size_t dataSize = _vertices.size() * _dimensions;
+    for (auto& [name, data] : _dataFields) {
+        data.resize(dataSize);
+    }
+}
 
 }

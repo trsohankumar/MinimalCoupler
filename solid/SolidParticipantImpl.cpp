@@ -19,8 +19,9 @@ namespace MinimalCoupler
         providedMesh->setMeshName(_participantName + "-Mesh");
         providedMesh->addDataToMesh("Force");
         providedMesh->addDataToMesh("Displacement");
+        providedMesh->setMeshDimensions(2);
 
-        _meshes[providedMesh->getMeshName()] = std::move(providedMesh);
+        _meshes[std::string(providedMesh->getMeshName())] = std::move(providedMesh);
 
 
     }
@@ -81,9 +82,22 @@ namespace MinimalCoupler
         return 1;
     }
 
-    void SolidParticipantImplementation::setMeshVertices( precice::string_view meshName,        precice::span< const double > coordinates,precice::span< VertexID > ids)
+    void SolidParticipantImplementation::setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates, precice::span<VertexID> ids)
     {
-        
+        auto& mesh = _meshes[std::string(meshName)];
+        int dim = mesh->getMeshDimensions();
+
+        std::vector<Point> vertices;
+        vertices.reserve(coordinates.size() / dim);
+
+        for (size_t i = 0; i < coordinates.size(); i += dim)
+        {
+            vertices.emplace_back(coordinates[i], coordinates[i+1], coordinates[i+2]);
+            ids[i/dim] = static_cast<VertexID>(i/dim);
+        }
+
+        mesh->setMeshVertices(vertices);
+        mesh->allocateDataFields();  // Allocates dimensions * vertexCount for each data field
     }
 
     // Data exchange methods
