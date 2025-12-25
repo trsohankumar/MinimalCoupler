@@ -6,7 +6,7 @@
 
 namespace MinimalCoupler
 {
-    enum MeshType
+    enum class MeshType
     {
         PROVIDED,
         RECEIVED
@@ -15,15 +15,19 @@ namespace MinimalCoupler
     class Mesh
     {
     public:
-        const std::string getMeshName() const;
+        Mesh();
+        std::string_view getMeshName() const;
         void setMeshName(std::string meshName);
-        void setMeshVertices(std::vector<Point>& vertices);
+        void setMeshVertices(std::vector<Point> vertices);
         void addDataToMesh(const std::string& dataName);
+        int getMeshDimensions() const;
+        void setMeshDimensions(int dimensions);
 
     private:
         std::string _meshName;
         std::vector<Point> _vertices;
-        std::unordered_map<std::string, std::vector<double>> _dataVectors;
+        int _dimensions;
+        std::unordered_map<std::string, std::vector<double>> _dataFields;
         MeshType _meshType;
     };
 
