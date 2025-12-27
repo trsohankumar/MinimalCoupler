@@ -11,9 +11,8 @@
 namespace MinimalCoupler
 {
 
-    FluidParticipantImplementation::FluidParticipantImplementation(std::string participantName,
-    std::string configurationFileName,int solverProcessIndex, int solverProcessSize)
-        : ParticipantImplementation(participantName, configurationFileName, solverProcessIndex, solverProcessSize), solidSocket(-1)
+    FluidParticipantImplementation::FluidParticipantImplementation(precice::string_view participantName, precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize)
+        : ParticipantImplementation(std::string(participantName), std::string(configurationFileName), solverProcessIndex, solverProcessSize), solidSocket(-1)
     {
         auto providedMesh = std::make_unique<Mesh>();
         providedMesh->setMeshName(_participantName + "-Mesh");
@@ -30,33 +29,31 @@ namespace MinimalCoupler
         receivedMesh->setMeshDimensions(2);
 
         _meshes[std::string(receivedMesh->getMeshName())] = std::move(receivedMesh);
-
     }
 
     void FluidParticipantImplementation::initialize()
     {
-        //1. Preprocess any meshes
+        // 1. Preprocess any meshes
         std::cout << "[FLUID] Starting initialization..." << std::endl;
 
-        //2. Setup communication between Fluid and solid participants
+        // 2. Setup communication between Fluid and solid participants
         std::cout << "[FLUID] Waiting for Solid to connect..." << std::endl;
         solidSocket = getSolidConnectionSocket();
         std::cout << "[FLUID] Solid connected! Socket: " << solidSocket << std::endl;
 
-        //3. Transfer vertices from participant sender to receiver
+        // 3. Transfer vertices from participant sender to receiver
 
         std::string message = "Hello Solid. This is from Fluid";
         send(solidSocket, message.c_str(), message.size(), 0);
         std::cout << "[FLUID] Sent message to Solid: " << message << std::endl;
 
-        //4. Initialize the coupling scheme
+        // 4. Initialize the coupling scheme
 
-        //5. Transfer Write Data
+        // 5. Transfer Write Data
 
-        //6. Transfer Read Data
+        // 6. Transfer Read Data
         std::cout << "[FLUID] Initialization complete!" << std::endl;
     }
-
 
     int FluidParticipantImplementation::getSolidConnectionSocket() const
     {
@@ -67,11 +64,11 @@ namespace MinimalCoupler
         }
 
         sockaddr_in serverAddress;
-        serverAddress.sin_family  = AF_INET;
+        serverAddress.sin_family = AF_INET;
         serverAddress.sin_port = htons(5001);
-        serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);  // Convert to network byte order
+        serverAddress.sin_addr.s_addr = htonl(INADDR_ANY); // Convert to network byte order
 
-        if (bind(sock, reinterpret_cast<struct sockaddr*>(&serverAddress), sizeof(serverAddress)) < 0)
+        if (bind(sock, reinterpret_cast<struct sockaddr *>(&serverAddress), sizeof(serverAddress)) < 0)
         {
             close(sock);
             throw std::runtime_error("Failed to bind socket");
@@ -94,14 +91,14 @@ namespace MinimalCoupler
         return client;
     }
 
-    int FluidParticipantImplementation::getMeshDimensions(const std::string& meshName) const
+    int FluidParticipantImplementation::getMeshDimensions(precice::string_view meshName) const
     {
-        return 1;
+        return _meshes.at(std::string(meshName))->getMeshDimensions();
     }
 
     void FluidParticipantImplementation::setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates, precice::span<VertexID> ids)
     {
-        auto& mesh = _meshes[std::string(meshName)];
+        auto &mesh = _meshes.at(std::string(meshName));
         int dim = mesh->getMeshDimensions();
 
         std::vector<Point> vertices;
@@ -109,28 +106,24 @@ namespace MinimalCoupler
 
         for (size_t i = 0; i < coordinates.size(); i += dim)
         {
-            vertices.emplace_back(coordinates[i], coordinates[i+1]);
-            ids[i/dim] = static_cast<VertexID>(i/dim);
+            vertices.emplace_back(coordinates[i], coordinates[i + 1]);
+            ids[i / dim] = static_cast<VertexID>(i / dim);
         }
 
         mesh->setMeshVertices(vertices);
         mesh->allocateDataFields();
-
     }
 
-    void FluidParticipantImplementation::readData(const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, double relativeReadTime, std::vector<double>& values) const
+    void FluidParticipantImplementation::readData(const std::string &meshName, const std::string &dataName, const std::vector<int> &vertexIDs, double relativeReadTime, std::vector<double> &values) const
     {
-
     }
 
-    void FluidParticipantImplementation::writeData(const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, const std::vector<double>& values)
+    void FluidParticipantImplementation::writeData(const std::string &meshName, const std::string &dataName, const std::vector<int> &vertexIDs, const std::vector<double> &values)
     {
-
     }
 
     void FluidParticipantImplementation::advance(double computedTimeStepSize)
     {
-
     }
 
     void FluidParticipantImplementation::finalize()
@@ -163,13 +156,11 @@ namespace MinimalCoupler
         return 1.0;
     }
 
-    void FluidParticipantImplementation::startProfilingSection(const std::string& name)
+    void FluidParticipantImplementation::startProfilingSection(const std::string &name)
     {
-
     }
 
     void FluidParticipantImplementation::stopLastProfilingSection()
     {
-
     }
 }

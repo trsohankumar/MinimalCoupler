@@ -11,9 +11,8 @@
 namespace MinimalCoupler
 {
 
-    SolidParticipantImplementation::SolidParticipantImplementation(std::string participantName,
-    std::string configurationFileName,int solverProcessIndex, int solverProcessSize)
-        : ParticipantImplementation(participantName, configurationFileName, solverProcessIndex, solverProcessSize), fluidSocket(-1)
+    SolidParticipantImplementation::SolidParticipantImplementation(precice::string_view participantName,precice::string_view configurationFileName,int solverProcessIndex, int solverProcessSize)
+        : ParticipantImplementation(std::string(participantName), std::string(configurationFileName), solverProcessIndex, solverProcessSize), fluidSocket(-1)
     {
         auto providedMesh = std::make_unique<Mesh>();
         providedMesh->setMeshName(_participantName + "-Mesh");
@@ -77,9 +76,9 @@ namespace MinimalCoupler
 
 
     
-    int SolidParticipantImplementation::getMeshDimensions(const std::string& meshName) const
+    int SolidParticipantImplementation::getMeshDimensions(precice::string_view meshName) const
     {
-        return 1;
+        return _meshes.at(std::string(meshName))->getMeshDimensions();
     }
 
     void SolidParticipantImplementation::setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates, precice::span<VertexID> ids)

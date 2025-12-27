@@ -21,7 +21,7 @@ public:
     virtual ~ParticipantImplementation() = default;
 
     // Mesh methods
-    virtual int getMeshDimensions(const std::string& meshName) const = 0;
+    virtual int getMeshDimensions(precice::string_view meshName) const = 0;
 
     virtual void setMeshVertices(
       precice::string_view meshName,

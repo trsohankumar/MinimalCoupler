@@ -1,38 +1,27 @@
 #pragma once
 
-#include<memory>
+#include <memory>
 
 #include "impl/ParticipantImpl.hpp"
 #include "data/Mesh.hpp"
 
 namespace MinimalCoupler
 {
-    class FluidParticipantImplementation: public ParticipantImplementation
+    class FluidParticipantImplementation : public ParticipantImplementation
     {
     public:
-        FluidParticipantImplementation(
-        std::string participantName,
-        std::string configurationFileName,
-        int         solverProcessIndex,
-        int         solverProcessSize);
+        FluidParticipantImplementation(std::string_view participantName, std::string_view configurationFileName, int solverProcessIndex, int solverProcessSize);
 
         FluidParticipantImplementation() = default;
 
-        
-        // Mesh methods
-        int getMeshDimensions(const std::string& meshName) const override;
+        int getMeshDimensions(precice::string_view meshName) const override;
 
-        void setMeshVertices(
-        precice::string_view meshName,
-        precice::span< const double > coordinates, ::precice::span< VertexID > ids) override;
+        void setMeshVertices( precice::string_view meshName, precice::span<const double> coordinates, ::precice::span<VertexID> ids) override;
 
+        void readData(const std::string &meshName, const std::string &dataName, const std::vector<int> &vertexIDs, double relativeReadTime, std::vector<double> &values) const override;
 
-        // Data exchange methods
-        void readData(const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, double relativeReadTime, std::vector<double>& values) const override;
+        void writeData(const std::string &meshName, const std::string &dataName, const std::vector<int> &vertexIDs, const std::vector<double> &values) override;
 
-        void writeData( const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, const std::vector<double>& values) override;
-
-        // Steering methods
         void initialize() override;
         void advance(double computedTimeStepSize) override;
         void finalize() override;
@@ -46,7 +35,7 @@ namespace MinimalCoupler
         double getMaxTimeStepSize() const override;
 
         // Profiling
-        void startProfilingSection(const std::string& name) override;
+        void startProfilingSection(const std::string &name) override;
         void stopLastProfilingSection() override;
 
     private:
