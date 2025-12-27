@@ -4,11 +4,11 @@ namespace MinimalCoupler
 {
 
     ParticipantImplementation::ParticipantImplementation(
-        std::string participantName,
-        std::string configurationFileName,
+        precice::string_view participantName,
+        precice::string_view configurationFileName,
         int         solverProcessIndex,
         int         solverProcessSize)
-        : _participantName(std::move(participantName)), _configFileName(std::move(configurationFileName)), _rank(solverProcessIndex), _size(solverProcessSize)
+        : _participantName(std::string(participantName)), _configFileName(std::string(configurationFileName)), _rank(solverProcessIndex), _size(solverProcessSize)
 
     {
         if (_participantName == "Solid")

@@ -12,11 +12,7 @@ class ParticipantImplementation
 {
 public:
 
-    ParticipantImplementation(
-        std::string participantName,
-        std::string configurationFileName,
-        int         solverProcessIndex,
-        int         solverProcessSize);
+    ParticipantImplementation(precice::string_view participantName, precice::string_view configurationFileName,int solverProcessIndex, int solverProcessSize);
 
     virtual ~ParticipantImplementation() = default;
 
