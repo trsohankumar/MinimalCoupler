@@ -42,7 +42,7 @@ namespace MinimalCoupler
         std::cout << "[FLUID] Solid connected! Socket: " << solidSocket << std::endl;
 
         // 3. Transfer vertices from participant sender to receiver
-
+        sendMeshVertices();
         std::string message = "Hello Solid. This is from Fluid";
         send(solidSocket, message.c_str(), message.size(), 0);
         std::cout << "[FLUID] Sent message to Solid: " << message << std::endl;
@@ -89,6 +89,18 @@ namespace MinimalCoupler
 
         close(sock);
         return client;
+    }
+
+    void FluidParticipantImplementation::sendMeshVertices() const
+    {
+        size_t size;
+        recv(solidSocket, &size, sizeof(size), 0);
+
+        if (size > 0)
+        {
+            std::vector<Point> vertices(size);
+            send(solidSocket, vertices.data(), size * sizeof(Point), MSG_WAITALL);
+        }
     }
 
     int FluidParticipantImplementation::getMeshDimensions(precice::string_view meshName) const
