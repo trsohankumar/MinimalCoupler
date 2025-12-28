@@ -49,4 +49,9 @@ void Mesh::allocateDataFields()
     }
 }
 
+const std::vector<Point>& Mesh::getMeshVertices() const
+{
+    return _vertices;
+}
+
 }

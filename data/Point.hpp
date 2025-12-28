@@ -2,12 +2,8 @@
 
 namespace MinimalCoupler
 {
-class Point
+struct Point
 {
-public:
-    Point(double x, double y);
-
-private:
     double x;
     double y;
 };

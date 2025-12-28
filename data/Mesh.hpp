@@ -24,6 +24,7 @@ namespace MinimalCoupler
         void setMeshDimensions(int dimensions);
         size_t getVertexCount() const;
         void allocateDataFields();
+        const std::vector<Point>& getMeshVertices() const;
 
     private:
         std::string _meshName;
