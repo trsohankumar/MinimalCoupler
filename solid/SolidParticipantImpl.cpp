@@ -38,12 +38,7 @@ namespace MinimalCoupler
         std::cout << "[SOLID] Connected! Socket: " << fluidSocket << std::endl;
 
         //3. Transfer vertices from participant sender to receiver
-        char buffer[1024];
-
-        int len = recv(fluidSocket, buffer, sizeof(buffer), 0);
-
-        buffer[len] = '\0';
-        std::cout << "[SOLID] Fluid says: " << buffer << std::endl;
+        sendMeshVertices();
 
         //4. Initialize the coupling scheme
 
@@ -74,6 +69,19 @@ namespace MinimalCoupler
         return sock;
     }
 
+    void SolidParticipantImplementation::sendMeshVertices() const
+    {
+        size_t size = _meshes.at("Solid-Mesh")->getVertexCount();
+        send(fluidSocket, &size, sizeof(size), 0);
+
+        if (size > 0)
+        {
+            auto vertices = _meshes.at("Solid-Mesh")->getMeshVertices();
+
+            send(fluidSocket, vertices.data(), size * sizeof(Point), 0);
+        }
+
+    }
 
     
     int SolidParticipantImplementation::getMeshDimensions(precice::string_view meshName) const
@@ -91,7 +99,7 @@ namespace MinimalCoupler
 
         for (size_t i = 0; i < coordinates.size(); i += dim)
         {
-            vertices.emplace_back(coordinates[i], coordinates[i+1], coordinates[i+2]);
+            vertices.emplace_back(coordinates[i], coordinates[i+1]);
             ids[i/dim] = static_cast<VertexID>(i/dim);
         }
 
