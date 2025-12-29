@@ -48,7 +48,7 @@ namespace MinimalCoupler
 
     private:
         int getFluidConnectionSocket() const;
-        void SolidParticipantImplementation::sendMeshVertices() const;
+        void sendMeshVertices() const;
         std::unordered_map<std::string, std::unique_ptr<Mesh>> _meshes;
         int fluidSocket;
     };

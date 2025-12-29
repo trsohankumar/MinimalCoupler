@@ -39,7 +39,7 @@ namespace MinimalCoupler
         void stopLastProfilingSection() override;
 
     private:
-        void FluidParticipantImplementation::sendMeshVertices() const;
+        void sendMeshVertices() const;
         int getSolidConnectionSocket() const;
         int solidSocket;
         std::unordered_map<std::string, std::unique_ptr<Mesh>> _meshes;

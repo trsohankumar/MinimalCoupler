@@ -95,11 +95,18 @@ namespace MinimalCoupler
     {
         size_t size;
         recv(solidSocket, &size, sizeof(size), 0);
+        std::cout << "[FLUID] Receiving " << size << " vertices from Solid" << std::endl;
 
         if (size > 0)
         {
             std::vector<Point> vertices(size);
-            send(solidSocket, vertices.data(), size * sizeof(Point), MSG_WAITALL);
+            recv(solidSocket, vertices.data(), size * sizeof(Point), MSG_WAITALL);
+
+            std::cout << "[FLUID] Vertices received:" << std::endl;
+            for (size_t i = 0; i < vertices.size(); ++i)
+            {
+                std::cout << "  Vertex " << i << ": (" << vertices[i].x << ", " << vertices[i].y << ")" << std::endl;
+            }
         }
     }
 

@@ -14,15 +14,18 @@ namespace MinimalCoupler
     SolidParticipantImplementation::SolidParticipantImplementation(precice::string_view participantName,precice::string_view configurationFileName,int solverProcessIndex, int solverProcessSize)
         : ParticipantImplementation(std::string(participantName), std::string(configurationFileName), solverProcessIndex, solverProcessSize), fluidSocket(-1)
     {
+        std::cout << "Starting constructor of Solid" << std::endl;
         auto providedMesh = std::make_unique<Mesh>();
         providedMesh->setMeshName(_participantName + "-Mesh");
         providedMesh->addDataToMesh("Force");
         providedMesh->addDataToMesh("Displacement");
         providedMesh->setMeshDimensions(2);
 
-        _meshes[std::string(providedMesh->getMeshName())] = std::move(providedMesh);
+        std::string meshKey = std::string(providedMesh->getMeshName());
+        std::cout << "Inserting mesh with key: '" << meshKey << "'" << std::endl;
+        _meshes[meshKey] = std::move(providedMesh);
 
-
+        std::cout << "Finished constructor of Solid" << std::endl;
     }
 
 
@@ -59,8 +62,9 @@ namespace MinimalCoupler
         sockaddr_in serverAddress;
         serverAddress.sin_family  = AF_INET;
         serverAddress.sin_port = htons(5001);
-        serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  // Convert to network byte order
+        serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  
 
+        // Try to implement a retry mechanism here
         if (connect(sock, reinterpret_cast<struct sockaddr *>(&serverAddress), sizeof(serverAddress)) < 0)
         {
             throw std::runtime_error("Unable to connect to Fluid participant");
@@ -71,12 +75,21 @@ namespace MinimalCoupler
 
     void SolidParticipantImplementation::sendMeshVertices() const
     {
-        size_t size = _meshes.at("Solid-Mesh")->getVertexCount();
+        std::string meshName = _participantName + "-Mesh";
+        std::cout << "Looking up mesh with key: '" << meshName << "'" << std::endl;
+        size_t size = _meshes.at(meshName)->getVertexCount();
+        std::cout << "[SOLID] Sending " << size << " vertices" << std::endl;
         send(fluidSocket, &size, sizeof(size), 0);
 
         if (size > 0)
         {
-            auto vertices = _meshes.at("Solid-Mesh")->getMeshVertices();
+            auto vertices = _meshes.at(meshName)->getMeshVertices();
+
+            std::cout << "[SOLID] Vertices being sent:" << std::endl;
+            for (size_t i = 0; i < vertices.size(); ++i)
+            {
+                std::cout << "  Vertex " << i << ": (" << vertices[i].x << ", " << vertices[i].y << ")" << std::endl;
+            }
 
             send(fluidSocket, vertices.data(), size * sizeof(Point), 0);
         }
@@ -86,6 +99,7 @@ namespace MinimalCoupler
     
     int SolidParticipantImplementation::getMeshDimensions(precice::string_view meshName) const
     {
+        std::cout<<"Here in getMeshDimensions for Solid" << std::endl;
         return _meshes.at(std::string(meshName))->getMeshDimensions();
     }
 
