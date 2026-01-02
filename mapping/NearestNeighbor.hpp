@@ -23,7 +23,7 @@ namespace MinimalCoupler
     private:
         std::unique_ptr<KDNode> buildKDTree(const std::vector<Point> &points, int axis);
         
-        void NearestNeighbor::findNearestNeighbor(const Point& queryPoint, const KDNode* node, Point& bestPoint, double& bestDist) const;
+        void findNearestNeighbor(const Point& queryPoint, const KDNode* node, Point& bestPoint, double& bestDist) const;
 
         double euclideanDistance(const Point& p1, const Point& p2) const;
         std::unique_ptr<KDNode> _root;

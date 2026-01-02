@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "impl/ParticipantImpl.hpp"
+#include "mapping/NearestNeighbor.hpp"
 #include "data/Mesh.hpp"
 
 namespace MinimalCoupler
@@ -40,7 +41,7 @@ namespace MinimalCoupler
 
     private:
         void sendMeshVertices() const;
-        int getSolidConnectionSocket() const;
+        int getSolidConnectionSocket() const;void computeMappings();
         int solidSocket;
         std::unordered_map<std::string, std::unique_ptr<Mesh>> _meshes;
     };

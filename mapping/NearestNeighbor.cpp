@@ -5,26 +5,29 @@
 
 namespace MinimalCoupler
 {
-NearestNeighbor::NearestNeighbor()
-    : _root(nullptr)
-{}
-
 std::unique_ptr<KDNode> NearestNeighbor::buildKDTree(const std::vector<Point>& points, int axis)
 {
+    // Base case: empty vector
+    if (points.empty())
+        return nullptr;
+
     auto root = std::make_unique<KDNode>();
 
-    std::nth_element(points.begin(), points.begin() + points.size() /2, points.end(), [&axis](const Point& lhs, const Point&rhs){
+    // Create a mutable copy since nth_element needs to reorder elements
+    std::vector<Point> mutablePoints = points;
+
+    std::nth_element(mutablePoints.begin(), mutablePoints.begin() + mutablePoints.size() /2, mutablePoints.end(), [&axis](const Point& lhs, const Point&rhs){
         if (axis == 0)
             return lhs.x < rhs.x;
         else
             return lhs.y < rhs.y;
     });
-    size_t id = points.size() / 2;
-    root->point = points[id];
+    size_t id = mutablePoints.size() / 2;
+    root->point = mutablePoints[id];
     root->nodeID = id;
     root->axis = axis;
-    root->left = buildKDTree(std::vector<Point>(points.begin(), points.begin() + points.size() / 2), axis == 0 ? 1 : 0);
-    root->right = buildKDTree(std::vector<Point>(points.begin() + points.size() / 2 + 1, points.end()), axis == 0 ? 1 : 0);
+    root->left = buildKDTree(std::vector<Point>(mutablePoints.begin(), mutablePoints.begin() + mutablePoints.size() / 2), axis == 0 ? 1 : 0);
+    root->right = buildKDTree(std::vector<Point>(mutablePoints.begin() + mutablePoints.size() / 2 + 1, mutablePoints.end()), axis == 0 ? 1 : 0);
 
     return root;
 }

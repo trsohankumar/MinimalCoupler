@@ -43,10 +43,9 @@ namespace MinimalCoupler
 
         // 3. Transfer vertices from participant sender to receiver
         sendMeshVertices();
-        std::string message = "Hello Solid. This is from Fluid";
-        send(solidSocket, message.c_str(), message.size(), 0);
-        std::cout << "[FLUID] Sent message to Solid: " << message << std::endl;
-
+        
+        // compute mappings between meshes
+        computeMappings();
         // 4. Initialize the coupling scheme
 
         // 5. Transfer Write Data
@@ -102,11 +101,16 @@ namespace MinimalCoupler
             std::vector<Point> vertices(size);
             recv(solidSocket, vertices.data(), size * sizeof(Point), MSG_WAITALL);
 
+            std::cout << "[FLUID] Solid mesh vertices set." << std::endl;
+            _meshes.at("Solid-Mesh")->setMeshVertices(vertices);
+            _meshes.at("Solid-Mesh")->allocateDataFields();
+
             std::cout << "[FLUID] Vertices received:" << std::endl;
             for (size_t i = 0; i < vertices.size(); ++i)
             {
                 std::cout << "  Vertex " << i << ": (" << vertices[i].x << ", " << vertices[i].y << ")" << std::endl;
             }
+            std::cout << "[FLUID] Solid mesh vertices set." << std::endl;
         }
     }
 
@@ -131,6 +135,26 @@ namespace MinimalCoupler
 
         mesh->setMeshVertices(vertices);
         mesh->allocateDataFields();
+    }
+
+    void FluidParticipantImplementation::computeMappings()
+    {
+        // Implement mapping computation between fluid and solid meshes using NearestNeighbor
+        std::cout << "[FLUID] Computing mappings between Fluid and Solid meshes..." << std::endl;
+        NearestNeighbor nnMapper;
+        
+        const auto& fluidMeshVertices = _meshes.at("Fluid-Mesh")->getMeshVertices();
+
+
+        const auto& SolidMeshVertices = _meshes.at("Solid-Mesh")->getMeshVertices();
+
+        auto mappedVertices = nnMapper.computeNearestNeighbors(SolidMeshVertices, fluidMeshVertices);
+
+        std::cout << "[FLUID] Mapped Vertices:" << std::endl;
+        for (size_t i = 0; i < mappedVertices.size(); ++i)
+        {
+            std::cout << "  Solid Vertex " << i << " mapped to Fluid Vertex: (" << mappedVertices[i].x << ", " << mappedVertices[i].y << ")" << std::endl;
+        }
     }
 
     void FluidParticipantImplementation::readData(const std::string &meshName, const std::string &dataName, const std::vector<int> &vertexIDs, double relativeReadTime, std::vector<double> &values) const
