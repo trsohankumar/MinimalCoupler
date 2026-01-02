@@ -65,11 +65,20 @@ namespace MinimalCoupler
         serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  
 
         // Try to implement a retry mechanism here
-        if (connect(sock, reinterpret_cast<struct sockaddr *>(&serverAddress), sizeof(serverAddress)) < 0)
+        bool connected = false;
+        while (!connected)
         {
-            throw std::runtime_error("Unable to connect to Fluid participant");
+            if (connect(sock, reinterpret_cast<struct sockaddr *>(&serverAddress), sizeof(serverAddress)) == 0)
+            {
+                connected = true;
+            }
+            else
+            {
+                std::cout << "[SOLID] Connection to Fluid failed, retrying in 1 second..." << std::endl;
+                sleep(1); 
+            }
         }
-        
+                
         return sock;
     }
 
