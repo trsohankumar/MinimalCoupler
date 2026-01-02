@@ -45,6 +45,7 @@ namespace MinimalCoupler
         sendMeshVertices();
         
         // compute mappings between meshes
+        // The participant that receives the mesh MUST compute mappings in both the read and write directions
         computeMappings();
         // 4. Initialize the coupling scheme
 
@@ -146,14 +147,21 @@ namespace MinimalCoupler
         const auto& fluidMeshVertices = _meshes.at("Fluid-Mesh")->getMeshVertices();
 
 
-        const auto& SolidMeshVertices = _meshes.at("Solid-Mesh")->getMeshVertices();
+        const auto& solidMeshVertices = _meshes.at("Solid-Mesh")->getMeshVertices();
 
-        auto mappedVertices = nnMapper.computeNearestNeighbors(SolidMeshVertices, fluidMeshVertices);
+        auto readMappedVertices = nnMapper.computeNearestNeighbors(solidMeshVertices, fluidMeshVertices);
 
-        std::cout << "[FLUID] Mapped Vertices:" << std::endl;
-        for (size_t i = 0; i < mappedVertices.size(); ++i)
+        std::cout << "[FLUID] Solid to Fluid Mapping i.e read:" << std::endl;
+        for (size_t i = 0; i < readMappedVertices.size(); ++i)
         {
-            std::cout << "  Solid Vertex " << i << " mapped to Fluid Vertex: (" << mappedVertices[i].x << ", " << mappedVertices[i].y << ")" << std::endl;
+            std::cout << "  Solid Vertex " << i << " mapped to Fluid Vertex: (" << readMappedVertices[i].x << ", " << readMappedVertices[i].y << ")" << std::endl;
+        }
+        auto writeMappedVertices = nnMapper.computeNearestNeighbors(fluidMeshVertices, solidMeshVertices);
+
+        std::cout << "[FLUID] Fluid to Solid Mapping i.e read:" << std::endl;
+        for (size_t i = 0; i < readMappedVertices.size(); ++i)
+        {
+            std::cout << "  Fluid Vertex " << i << " mapped to Solid Vertex: (" << readMappedVertices[i].x << ", " << readMappedVertices[i].y << ")" << std::endl;
         }
     }
 
