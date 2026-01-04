@@ -20,8 +20,8 @@ namespace MinimalCoupler
         std::cout << "Starting constructor of Solid" << std::endl;
         auto providedMesh = std::make_unique<Mesh>();
         providedMesh->setMeshName(getParticipantName() + "-Mesh");
-        providedMesh->addDataToMesh("Force", getCouplingScheme().currentTime());
-        providedMesh->addDataToMesh("Displacement", getCouplingScheme().currentTime());
+        providedMesh->addDataToMesh("Force", getCouplingScheme().getCurrentTime());
+        providedMesh->addDataToMesh("Displacement", getCouplingScheme().getCurrentTime());
         providedMesh->setMeshDimensions(2);
 
         std::string meshKey = std::string(providedMesh->getMeshName());

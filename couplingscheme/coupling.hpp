@@ -8,7 +8,7 @@ namespace MinimalCoupler
         CouplingScheme();
         double getMaxTime() const;
         double getTimeWinowSize() const;
-        double currentTime() const;
+        double getCurrentTime() const;
         void setCurrentTime(double time);
         void setMaxTime(double maxTime);
         void setTimeWindowSize(double timeWindowSize);

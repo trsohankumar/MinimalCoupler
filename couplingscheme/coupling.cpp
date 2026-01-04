@@ -16,7 +16,7 @@ namespace MinimalCoupler
     {
         return _timeWindowSize;
     }
-    double CouplingScheme::currentTime() const
+    double CouplingScheme::getCurrentTime() const
     {
         return _currentTime;
     }

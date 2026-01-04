@@ -19,16 +19,16 @@ namespace MinimalCoupler
 
         auto providedMesh = std::make_unique<Mesh>();
         providedMesh->setMeshName(getParticipantName() + "-Mesh");
-        providedMesh->addDataToMesh("Force", getCouplingScheme().currentTime());
-        providedMesh->addDataToMesh("Displacement", getCouplingScheme().currentTime());
+        providedMesh->addDataToMesh("Force", getCouplingScheme().getCurrentTime());
+        providedMesh->addDataToMesh("Displacement", getCouplingScheme().getCurrentTime());
         providedMesh->setMeshDimensions(2);
 
         _meshes[std::string(providedMesh->getMeshName())] = std::move(providedMesh);
 
         auto receivedMesh = std::make_unique<Mesh>();
         receivedMesh->setMeshName(getRemoteParticipantName() + "-Mesh");
-        receivedMesh->addDataToMesh("Force", getCouplingScheme().currentTime());
-        receivedMesh->addDataToMesh("Displacement", getCouplingScheme().currentTime());
+        receivedMesh->addDataToMesh("Force", getCouplingScheme().getCurrentTime());
+        receivedMesh->addDataToMesh("Displacement", getCouplingScheme().getCurrentTime());
         receivedMesh->setMeshDimensions(2);
 
         _meshes[std::string(receivedMesh->getMeshName())] = std::move(receivedMesh);
@@ -50,14 +50,16 @@ namespace MinimalCoupler
         // compute mappings between meshes
         // The participant that receives the mesh MUST compute mappings in both the read and write directions
         computeMappings();
-        // 4. Transfer Write Data
-        
+        // 4. Map Write Data
+        mapWriteData();
         // 5. Initialize the coupling scheme
 
 
-        // 6. Transfer Read Data
+        // 6. Map Read Data
+        // mapReadData();
         std::cout << "[FLUID] Initialization complete!" << std::endl;
     }
+
 
     int FluidParticipantImplementation::getSolidConnectionSocket() const
     {
@@ -170,6 +172,30 @@ namespace MinimalCoupler
 
         _meshes.at("Fluid-Mesh")->setWriteMapping(std::move(fluidToSolidMapping));
         _meshes.at("Fluid-Mesh")->setReadMapping(std::move(solidToFluidMapping));
+    }
+
+    void FluidParticipantImplementation::mapWriteData()
+    {
+        const auto& fluidForceData = _meshes.at("Fluid-Mesh")->getDataField("Force", getCouplingScheme().getCurrentTime());
+
+        auto& solidForceData = _meshes.at("Solid-Mesh")->getDataField("Force", getCouplingScheme().getCurrentTime());
+
+        NearestNeighbor::mapConservative(_meshes.at("Fluid-Mesh")->getWriteMapping(), fluidForceData, solidForceData, _meshes.at("Fluid-Mesh")->getMeshDimensions());
+
+        std::cout << "[FLUID] Solid mesh Force data after mapping:" << std::endl;
+        int dim = _meshes.at("Solid-Mesh")->getMeshDimensions();
+        for (size_t i = 0; i < solidForceData.size(); i += dim) {
+            std::cout << "  Vertex " << i/dim << ": (" << solidForceData[i] << ", " << solidForceData[i+1] << ")" << std::endl;
+        }
+    }
+    
+    void FluidParticipantImplementation::mapReadData()
+    {
+        auto& fluidDispData = _meshes.at("Fluid-Mesh")->getDataField("Displacement", getCouplingScheme().getCurrentTime());
+
+        const auto& solidDispData = _meshes.at("Solid-Mesh")->getDataField("Displacement", getCouplingScheme().getCurrentTime());
+
+        NearestNeighbor::mapConservative(_meshes.at("Fluid-Mesh")->getReadMapping(), solidDispData, fluidDispData, _meshes.at("Fluid-Mesh")->getMeshDimensions());
     }
 
     void FluidParticipantImplementation::readData(const std::string &meshName, const std::string &dataName, const std::vector<int> &vertexIDs, double relativeReadTime, std::vector<double> &values) const
