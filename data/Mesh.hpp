@@ -19,21 +19,24 @@ namespace MinimalCoupler
         std::string_view getMeshName() const;
         void setMeshName(std::string meshName);
         void setMeshVertices(std::vector<Point> vertices);
-        void setVertexMapping(std::vector<Point>&& vertexMapping);
+        void setReadMapping(std::vector<Point>&& vertexMapping);
+        void setWriteMapping(std::vector<Point>&& vertexMapping);
         void addDataToMesh(const std::string& dataName);
         int getMeshDimensions() const;
         void setMeshDimensions(int dimensions);
         size_t getVertexCount() const;
         void allocateDataFields();
         const std::vector<Point>& getMeshVertices() const;
-        const std::vector<Point>& getVertexMapping() const;
+        const std::vector<Point>& getReadMapping() const;
+        const std::vector<Point>& getWriteMapping() const;
         std::vector<double>& getDataField(const std::string& dataName);
         const std::vector<double>& getDataField(const std::string& dataName) const;
 
     private:
         std::string _meshName;
         std::vector<Point> _vertices;
-        std::vector<Point> _vertexMapping;
+        std::vector<Point> _readVertexMapping;
+        std::vector<Point> _writeVertexMapping;
         int _dimensions;
         std::unordered_map<std::string, std::vector<double>> _dataFields;
         MeshType _meshType;
