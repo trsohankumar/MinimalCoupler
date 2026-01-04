@@ -122,8 +122,9 @@ namespace MinimalCoupler
 
         for (size_t i = 0; i < coordinates.size(); i += dim)
         {
-            vertices.emplace_back(coordinates[i], coordinates[i+1]);
-            ids[i/dim] = static_cast<VertexID>(i/dim);
+            ids[i / dim] = static_cast<VertexID>(i / dim);
+            Point v {ids[i/dim], coordinates[i], coordinates[i + 1]};
+            vertices.emplace_back(std::move(v));
         }
 
         mesh->setMeshVertices(vertices);

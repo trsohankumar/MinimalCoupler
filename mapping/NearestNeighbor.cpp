@@ -24,7 +24,6 @@ std::unique_ptr<KDNode> NearestNeighbor::buildKDTree(const std::vector<Point>& p
     });
     size_t id = mutablePoints.size() / 2;
     root->point = mutablePoints[id];
-    root->nodeID = id;
     root->axis = axis;
     root->left = buildKDTree(std::vector<Point>(mutablePoints.begin(), mutablePoints.begin() + mutablePoints.size() / 2), axis == 0 ? 1 : 0);
     root->right = buildKDTree(std::vector<Point>(mutablePoints.begin() + mutablePoints.size() / 2 + 1, mutablePoints.end()), axis == 0 ? 1 : 0);
@@ -83,7 +82,34 @@ std::vector<Point> NearestNeighbor::computeNearestNeighbors(const std::vector<Po
         findNearestNeighbor(queryPoints[i], _root.get(), bestPoint, bestDist);
         nearestNeighbors[i] = bestPoint;
     }
-
     return nearestNeighbors;
+}
+
+void NearestNeighbor::mapConsistent(const std::vector<Point>& mapping, const std::vector<double>& sourceData, std::vector<double>& targetData, int dimensions)
+{
+    targetData.resize(mapping.size() * dimensions);
+
+    for (size_t i = 0; i < mapping.size(); ++i)
+    {
+        int sourceVertexID = mapping[i].id;
+        for (int d = 0; d < dimensions; ++d)
+        {
+            targetData[i * dimensions + d] = sourceData[sourceVertexID * dimensions + d];
+        }
+    }
+}
+
+void NearestNeighbor::mapConservative(const std::vector<Point>& mapping, const std::vector<double>& sourceData,               std::vector<double>& targetData, int dimensions)
+{
+    std::fill(targetData.begin(), targetData.end(), 0.0);
+
+    for (size_t i = 0; i < mapping.size(); ++i)
+    {
+        int targetVertexID = mapping[i].id;
+        for (int d = 0; d < dimensions; ++d)
+        {
+            targetData[targetVertexID * dimensions + d] += sourceData[i * dimensions + d];
+        }
+    }
 }
 }

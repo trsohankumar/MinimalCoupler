@@ -54,4 +54,23 @@ const std::vector<Point>& Mesh::getMeshVertices() const
     return _vertices;
 }
 
+void Mesh::setVertexMapping(std::vector<Point>&& vertexMapping)
+{
+    _vertexMapping = std::move(vertexMapping);
+}
+
+const std::vector<Point>& Mesh::getVertexMapping() const
+{
+    return _vertexMapping;
+}
+
+std::vector<double>& Mesh::getDataField(const std::string& dataName)
+{
+    return _dataFields.at(dataName);
+}
+
+const std::vector<double>& Mesh::getDataField(const std::string& dataName) const
+{
+    return _dataFields.at(dataName);
+}
 }

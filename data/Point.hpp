@@ -4,7 +4,8 @@ namespace MinimalCoupler
 {
 struct Point
 {
-    double x;
-    double y;
+    int id {};
+    double x {};
+    double y {};
 };
 }
