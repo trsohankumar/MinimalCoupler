@@ -8,16 +8,46 @@ namespace MinimalCoupler
         precice::string_view configurationFileName,
         int         solverProcessIndex,
         int         solverProcessSize)
-        : _participantName(std::string(participantName)), _configFileName(std::string(configurationFileName)), _rank(solverProcessIndex), _size(solverProcessSize)
+        : _participantName(std::string(participantName)), _configFileName(std::string(configurationFileName)), couplingScheme(), _rank(solverProcessIndex), _size(solverProcessSize)
 
     {
         if (_participantName == "Solid")
         {
             _remoteParticipantName = "Fluid";
         }
-        else 
+        else
         {
             _remoteParticipantName = "Solid";
         }
+    }
+
+    const std::string& ParticipantImplementation::getParticipantName() const
+    {
+        return _participantName;
+    }
+
+    const std::string& ParticipantImplementation::getRemoteParticipantName() const
+    {
+        return _remoteParticipantName;
+    }
+
+    const std::string& ParticipantImplementation::getConfigFileName() const
+    {
+        return _configFileName;
+    }
+
+    int ParticipantImplementation::getRank() const
+    {
+        return _rank;
+    }
+
+    int ParticipantImplementation::getSize() const
+    {
+        return _size;
+    }
+
+    CouplingScheme& ParticipantImplementation::getCouplingScheme()
+    {
+        return couplingScheme;
     }
 }

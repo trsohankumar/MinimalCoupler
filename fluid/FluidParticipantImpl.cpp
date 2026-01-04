@@ -14,18 +14,21 @@ namespace MinimalCoupler
     FluidParticipantImplementation::FluidParticipantImplementation(precice::string_view participantName, precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize)
         : ParticipantImplementation(std::string(participantName), std::string(configurationFileName), solverProcessIndex, solverProcessSize), solidSocket(-1)
     {
+        getCouplingScheme().setMaxTime(1.0);
+        getCouplingScheme().setTimeWindowSize(0.1);
+
         auto providedMesh = std::make_unique<Mesh>();
-        providedMesh->setMeshName(_participantName + "-Mesh");
-        providedMesh->addDataToMesh("Force");
-        providedMesh->addDataToMesh("Displacement");
+        providedMesh->setMeshName(getParticipantName() + "-Mesh");
+        providedMesh->addDataToMesh("Force", getCouplingScheme().currentTime());
+        providedMesh->addDataToMesh("Displacement", getCouplingScheme().currentTime());
         providedMesh->setMeshDimensions(2);
 
         _meshes[std::string(providedMesh->getMeshName())] = std::move(providedMesh);
 
         auto receivedMesh = std::make_unique<Mesh>();
-        receivedMesh->setMeshName(_remoteParticipantName + "-Mesh");
-        receivedMesh->addDataToMesh("Force");
-        receivedMesh->addDataToMesh("Displacement");
+        receivedMesh->setMeshName(getRemoteParticipantName() + "-Mesh");
+        receivedMesh->addDataToMesh("Force", getCouplingScheme().currentTime());
+        receivedMesh->addDataToMesh("Displacement", getCouplingScheme().currentTime());
         receivedMesh->setMeshDimensions(2);
 
         _meshes[std::string(receivedMesh->getMeshName())] = std::move(receivedMesh);

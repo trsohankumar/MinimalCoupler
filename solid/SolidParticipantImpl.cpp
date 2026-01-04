@@ -14,11 +14,14 @@ namespace MinimalCoupler
     SolidParticipantImplementation::SolidParticipantImplementation(precice::string_view participantName,precice::string_view configurationFileName,int solverProcessIndex, int solverProcessSize)
         : ParticipantImplementation(std::string(participantName), std::string(configurationFileName), solverProcessIndex, solverProcessSize), fluidSocket(-1)
     {
+        getCouplingScheme().setMaxTime(1.0);
+        getCouplingScheme().setTimeWindowSize(0.1);
+
         std::cout << "Starting constructor of Solid" << std::endl;
         auto providedMesh = std::make_unique<Mesh>();
-        providedMesh->setMeshName(_participantName + "-Mesh");
-        providedMesh->addDataToMesh("Force");
-        providedMesh->addDataToMesh("Displacement");
+        providedMesh->setMeshName(getParticipantName() + "-Mesh");
+        providedMesh->addDataToMesh("Force", getCouplingScheme().currentTime());
+        providedMesh->addDataToMesh("Displacement", getCouplingScheme().currentTime());
         providedMesh->setMeshDimensions(2);
 
         std::string meshKey = std::string(providedMesh->getMeshName());
@@ -84,7 +87,7 @@ namespace MinimalCoupler
 
     void SolidParticipantImplementation::sendMeshVertices() const
     {
-        std::string meshName = _participantName + "-Mesh";
+        std::string meshName = getParticipantName() + "-Mesh";
         std::cout << "Looking up mesh with key: '" << meshName << "'" << std::endl;
         size_t size = _meshes.at(meshName)->getVertexCount();
         std::cout << "[SOLID] Sending " << size << " vertices" << std::endl;

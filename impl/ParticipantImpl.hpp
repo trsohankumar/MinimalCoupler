@@ -3,6 +3,7 @@
 #include<string>
 #include<vector>
 #include "precice/types.hpp"
+#include "couplingscheme/coupling.hpp"
 
 namespace MinimalCoupler
 {
@@ -55,9 +56,18 @@ public:
     virtual void stopLastProfilingSection() = 0;
 
 protected:
+    const std::string& getParticipantName() const;
+    const std::string& getRemoteParticipantName() const;
+    const std::string& getConfigFileName() const;
+    int getRank() const;
+    int getSize() const;
+    CouplingScheme& getCouplingScheme();
+
+private:
     std::string _participantName;
     std::string _remoteParticipantName;
     std::string _configFileName;
+    CouplingScheme couplingScheme;
     int _rank;
     int _size;
 

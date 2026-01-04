@@ -21,16 +21,16 @@ void Mesh::setMeshVertices(std::vector<Point> vertices)
    _vertices = std::move(vertices); 
 }
 
-void Mesh::addDataToMesh(const std::string& dataName)
+void Mesh::addDataToMesh(const std::string& dataName, double timestamp)
 {
-    _dataFields[dataName] = std::vector<double>{};
+    _dataFields[dataName][timestamp] = std::vector<double>{};
 }
 
 int Mesh::getMeshDimensions() const
 {
     return _dimensions;
 }
-        
+
 void Mesh::setMeshDimensions(int dimensions)
 {
     _dimensions = dimensions;
@@ -44,8 +44,10 @@ size_t Mesh::getVertexCount() const
 void Mesh::allocateDataFields()
 {
     size_t dataSize = _vertices.size() * _dimensions;
-    for (auto& [name, data] : _dataFields) {
-        data.resize(dataSize);
+    for (auto& [name, timestampMap] : _dataFields) {
+        for (auto& [timestamp, data] : timestampMap) {
+            data.resize(dataSize, 0.0);
+        }
     }
 }
 
@@ -74,13 +76,8 @@ const std::vector<Point>& Mesh::getWriteMapping() const
     return _writeVertexMapping;
 }
 
-std::vector<double>& Mesh::getDataField(const std::string& dataName)
+std::vector<double>& Mesh::getDataField(const std::string& dataName, double timestamp)
 {
-    return _dataFields.at(dataName);
-}
-
-const std::vector<double>& Mesh::getDataField(const std::string& dataName) const
-{
-    return _dataFields.at(dataName);
+    return _dataFields.at(dataName).at(timestamp);
 }
 }
