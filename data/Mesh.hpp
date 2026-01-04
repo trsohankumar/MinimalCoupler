@@ -22,7 +22,7 @@ namespace MinimalCoupler
         void setMeshVertices(std::vector<Point> vertices);
         void setReadMapping(std::vector<Point>&& vertexMapping);
         void setWriteMapping(std::vector<Point>&& vertexMapping);
-        void addDataToMesh(const std::string& dataName, double timestamp);
+        void addDataToMesh(const std::string& dataName, double timestamp, std::vector<double>&& inputData = std::vector<double>());
         int getMeshDimensions() const;
         void setMeshDimensions(int dimensions);
         size_t getVertexCount() const;

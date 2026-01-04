@@ -46,11 +46,11 @@ namespace MinimalCoupler
         //3. Transfer vertices from participant sender to receiver
         sendMeshVertices();
 
-        //4. Initialize the coupling scheme
+        //4. Map Write Data (Not needed here as it does not receive any meshes)
+        //5. Initialize the coupling scheme
+        getCouplingScheme().initialize(getParticipantName(), _meshes.at("Solid-Mesh").get(), fluidSocket);
 
-        //5. Transfer Write Data
-
-        //6. Transfer Read Data
+        //6. Map Read Data (Not needed here as it does not receive any meshes)
         std::cout << "[SOLID] Initialization complete!" << std::endl;
     }
 

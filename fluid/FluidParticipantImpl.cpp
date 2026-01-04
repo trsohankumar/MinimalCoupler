@@ -53,10 +53,10 @@ namespace MinimalCoupler
         // 4. Map Write Data
         mapWriteData();
         // 5. Initialize the coupling scheme
-
+        getCouplingScheme().initialize(getParticipantName(), _meshes.at("Solid-Mesh").get(), solidSocket);
 
         // 6. Map Read Data
-        // mapReadData();
+        mapReadData();
         std::cout << "[FLUID] Initialization complete!" << std::endl;
     }
 
@@ -195,7 +195,13 @@ namespace MinimalCoupler
 
         const auto& solidDispData = _meshes.at("Solid-Mesh")->getDataField("Displacement", getCouplingScheme().getCurrentTime());
 
-        NearestNeighbor::mapConservative(_meshes.at("Fluid-Mesh")->getReadMapping(), solidDispData, fluidDispData, _meshes.at("Fluid-Mesh")->getMeshDimensions());
+        NearestNeighbor::mapConsistent(_meshes.at("Fluid-Mesh")->getReadMapping(), solidDispData, fluidDispData, _meshes.at("Fluid-Mesh")->getMeshDimensions());
+
+        std::cout << "[FLUID] Fluid mesh Displacement data after mapping:" << std::endl;
+        int dim = _meshes.at("Fluid-Mesh")->getMeshDimensions();
+        for (size_t i = 0; i < fluidDispData.size(); i += dim) {
+            std::cout << "  Vertex " << i/dim << ": (" << fluidDispData[i] << ", " << fluidDispData[i+1] << ")" << std::endl;
+        }
     }
 
     void FluidParticipantImplementation::readData(const std::string &meshName, const std::string &dataName, const std::vector<int> &vertexIDs, double relativeReadTime, std::vector<double> &values) const

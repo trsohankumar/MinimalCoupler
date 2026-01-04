@@ -1,4 +1,6 @@
 #pragma once
+#include "data/Mesh.hpp"
+#include "precice/types.hpp"
 
 namespace MinimalCoupler
 {
@@ -12,6 +14,7 @@ namespace MinimalCoupler
         void setCurrentTime(double time);
         void setMaxTime(double maxTime);
         void setTimeWindowSize(double timeWindowSize);
+        void initialize(precice::string_view participantName, Mesh* mesh, int remoteSocket) const;
 
     private:
         double _maxTime;
