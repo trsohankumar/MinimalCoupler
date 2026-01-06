@@ -17,39 +17,55 @@ namespace precice
   class Participant
   {
   public:
+    // Construction and Configuration
     Participant(::precice::string_view participantName, ::precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize);
-
+    Participant(::precice::string_view participantName, ::precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize, void *communicator);
     ~Participant() = default;
 
-    // Mesh methods
+    // Status Queries
     int getMeshDimensions(::precice::string_view meshName) const;
+    int getDataDimensions(::precice::string_view meshName, ::precice::string_view dataName) const;
+    bool isCouplingOngoing() const;
+    bool isTimeWindowComplete() const;
+    double getMaxTimeStepSize() const;
 
+    // Mesh Access
+    bool 	requiresMeshConnectivityFor (::precice::string_view meshName) const;
+    void 	resetMesh (::precice::string_view meshName);
+    VertexID 	setMeshVertex (::precice::string_view meshName, ::precice::span< const double > position);
+    int 	getMeshVertexSize (::precice::string_view meshName) const;
     void setMeshVertices(::precice::string_view meshName, ::precice::span<const double> coordinates, ::precice::span<VertexID> ids);
+    void 	setMeshEdge (::precice::string_view meshName, VertexID first, VertexID second);
+    void 	setMeshEdges (::precice::string_view meshName, ::precice::span< const VertexID > ids);
+    void 	setMeshTriangle (::precice::string_view meshName, VertexID first, VertexID second, VertexID third);
+    void 	setMeshTriangles (::precice::string_view meshName, ::precice::span< const VertexID > ids);
+    void 	setMeshQuad (::precice::string_view meshName, VertexID first, VertexID second, VertexID third, VertexID fourth);
+    void 	setMeshQuads (::precice::string_view meshName, ::precice::span< const VertexID > ids);
+    void 	setMeshTetrahedron (::precice::string_view meshName, VertexID first, VertexID second, VertexID third, VertexID fourth);
+    void 	setMeshTetrahedra (::precice::string_view meshName, ::precice::span< const VertexID > ids);
 
-    // Data exchange methods
-    void readData(const std::string &meshName, const std::string &dataName, const std::vector<int> &vertexIDs, double relativeReadTime,std::vector<double> &values) const;
+    // Data access methods
+    bool requiresInitialData() const;
+    bool requiresGradientDataFor(::precice::string_view meshName, ::precice::string_view dataName) const;
+    void readData(::precice::string_view meshName, ::precice::string_view dataName, ::precice::span<const VertexID> ids, double relativeReadTime, ::precice::span<double> values) const;
+    void writeData(::precice::string_view meshName, ::precice::string_view dataName, ::precice::span<const VertexID> ids, ::precice::span<const double> values);
+    void writeGradientData(::precice::string_view meshName, ::precice::string_view dataName, ::precice::span<const VertexID> ids, ::precice::span<const double> gradients);
+    void mapAndReadData(::precice::string_view fromMeshName, ::precice::string_view dataName, ::precice::span<const double> positions, double relativeReadTime, ::precice::span<double> values) const;
+    void writeAndMapData(::precice::string_view meshName, ::precice::string_view dataName, ::precice::span<const double> positions, ::precice::span<const double> values);
 
-    void writeData(
-        const std::string &meshName,
-        const std::string &dataName,
-        const std::vector<int> &vertexIDs,
-        const std::vector<double> &values);
+    // Direct access
+    void setMeshAccessRegion(::precice::string_view meshName, ::precice::span<const double> boundingBox) const;
+    void getMeshVertexIDsAndCoordinates(::precice::string_view meshName, ::precice::span<VertexID> ids, ::precice::span<double> coordinates) const;
 
     // Steering methods
     void initialize();
     void advance(double computedTimeStepSize);
     void finalize();
-
-    // Status queries
-    bool isCouplingOngoing() const;
-    bool requiresInitialData() const;
     bool requiresWritingCheckpoint() const;
     bool requiresReadingCheckpoint() const;
 
-    double getMaxTimeStepSize() const;
-
     // Profiling
-    void startProfilingSection(const std::string &name);
+    void startProfilingSection(::precice::string_view name);
     void stopLastProfilingSection();
 
   private:
