@@ -1,22 +1,34 @@
 cmake_minimum_required(VERSION 3.28)
-project(minimalcoupler)
+project(precice)
 
 set(CMAKE_CXX_STANDARD 23)
 
-include(FetchContent)
-
-FetchContent_Declare(
-        spdlog
-        GIT_REPOSITORY https://github.com/gabime/spdlog
-        GIT_TAG v1.16.0
+add_library(precice SHARED
+    precice/precice.hpp
+    precice/types.hpp
+    participant/Participant.hpp
+    participant/Participant.cpp
+    data/Mesh.hpp
+    data/Mesh.cpp
+    data/Point.hpp
+    couplingscheme/coupling.hpp
+    couplingscheme/coupling.cpp
+    mapping/NearestNeighbor.hpp
+    mapping/NearestNeighbor.cpp
+    impl/ParticipantImpl.hpp
+    impl/ParticipantImpl.cpp
+    fluid/FluidParticipantImpl.hpp
+    fluid/FluidParticipantImpl.cpp
+    solid/SolidParticipantImpl.hpp
+    solid/SolidParticipantImpl.cpp
 )
-FetchContent_MakeAvailable(spdlog)
 
-add_library(minimalcoupler
-    minimalcoupler/Participant.hpp
-    minimalcoupler/Participant.cpp
+set_target_properties(precice PROPERTIES
+    SOVERSION 3
 )
 
-target_link_libraries(minimalcoupler
-    PRIVATE spdlog::spdlog_header_only
+target_include_directories(precice
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
 )
