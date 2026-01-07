@@ -11,7 +11,7 @@ namespace MinimalCoupler
     class FluidParticipantImplementation : public ParticipantImplementation
     {
     public:
-        FluidParticipantImplementation(std::string_view participantName, std::string_view configurationFileName, int solverProcessIndex, int solverProcessSize);
+        FluidParticipantImplementation(precice::string_view participantName, precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize);
 
         FluidParticipantImplementation() = default;
 

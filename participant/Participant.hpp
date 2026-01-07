@@ -20,7 +20,7 @@ namespace precice
     // Construction and Configuration
     Participant(::precice::string_view participantName, ::precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize);
     Participant(::precice::string_view participantName, ::precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize, void *communicator);
-    ~Participant() = default;
+    ~Participant();
 
     // Status Queries
     int getMeshDimensions(::precice::string_view meshName) const;
@@ -45,7 +45,7 @@ namespace precice
     void 	setMeshTetrahedra (::precice::string_view meshName, ::precice::span< const VertexID > ids);
 
     // Data access methods
-    bool requiresInitialData() const;
+    bool requiresInitialData();
     bool requiresGradientDataFor(::precice::string_view meshName, ::precice::string_view dataName) const;
     void readData(::precice::string_view meshName, ::precice::string_view dataName, ::precice::span<const VertexID> ids, double relativeReadTime, ::precice::span<double> values) const;
     void writeData(::precice::string_view meshName, ::precice::string_view dataName, ::precice::span<const VertexID> ids, ::precice::span<const double> values);
@@ -61,8 +61,8 @@ namespace precice
     void initialize();
     void advance(double computedTimeStepSize);
     void finalize();
-    bool requiresWritingCheckpoint() const;
-    bool requiresReadingCheckpoint() const;
+    bool requiresWritingCheckpoint();
+    bool requiresReadingCheckpoint();
 
     // Profiling
     void startProfilingSection(::precice::string_view name);

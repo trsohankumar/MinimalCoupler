@@ -31,6 +31,11 @@ namespace precice
         }
     }
 
+    Participant::~Participant()
+    {
+
+    }
+
     int Participant::getMeshDimensions(::precice::string_view meshName) const
     {
         return _impl->getMeshDimensions(meshName);
@@ -72,17 +77,17 @@ namespace precice
         return _impl->isCouplingOngoing();
     }
 
-    bool Participant::requiresInitialData() const
+    bool Participant::requiresInitialData()
     {
         return _impl->requiresInitialData();
     }
 
-    bool Participant::requiresWritingCheckpoint() const
+    bool Participant::requiresWritingCheckpoint()
     {
         return _impl->requiresWritingCheckpoint();
     }
 
-    bool Participant::requiresReadingCheckpoint() const
+    bool Participant::requiresReadingCheckpoint()
     {
         return _impl->requiresReadingCheckpoint();
     }

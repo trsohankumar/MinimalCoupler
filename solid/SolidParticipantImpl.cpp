@@ -12,7 +12,7 @@ namespace MinimalCoupler
 {
 
     SolidParticipantImplementation::SolidParticipantImplementation(precice::string_view participantName,precice::string_view configurationFileName,int solverProcessIndex, int solverProcessSize)
-        : ParticipantImplementation(std::string(participantName), std::string(configurationFileName), solverProcessIndex, solverProcessSize), fluidSocket(-1)
+        : ParticipantImplementation(participantName, configurationFileName, solverProcessIndex, solverProcessSize), fluidSocket(-1)
     {
         getCouplingScheme().setMaxTime(1.0);
         getCouplingScheme().setTimeWindowSize(0.1);
