@@ -9,6 +9,8 @@ add_library(precice SHARED
     precice/types.hpp
     participant/Participant.hpp
     participant/Participant.cpp
+    logger/logger.hpp
+    logger/logger.cpp
     data/Mesh.hpp
     data/Mesh.cpp
     data/Point.hpp

@@ -26,10 +26,36 @@ public:
     void setLogFile(const std::string& filename);
 
     template<typename... Args>
-    void console(LogLevel level, Args&&... args);
+    void console(LogLevel level, Args&&... args) {
+        if (level < minLevel_)
+            return;
+
+        std::ostringstream oss;
+        oss << "[" << levelStr(level) << "] ";
+        (oss << ... << args);
+
+        if (level >= LogLevel::ERROR)
+        {
+            std::cerr << oss.str() << std::endl;
+        }
+        else
+        {
+            std::cout << oss.str() << std::endl;
+        }
+    }
 
     template<typename... Args>
-    void file(LogLevel level, Args&&... args);
+    void file(LogLevel level, Args&&... args) {
+        if (!logFile_.is_open() || level < minLevel_)
+            return;
+
+        std::ostringstream oss;
+        oss << "[" << levelStr(level) << "] ";
+        (oss << ... << args);
+
+        logFile_ << oss.str() << std::endl;
+        logFile_.flush();
+    }
 
 private:
     Logger();

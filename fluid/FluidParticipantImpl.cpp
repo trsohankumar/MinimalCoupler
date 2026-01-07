@@ -7,6 +7,7 @@
 #include <memory>
 #include <iostream>
 #include "data/Point.hpp"
+#include "logger/logger.hpp"
 
 namespace MinimalCoupler
 {
@@ -37,12 +38,12 @@ namespace MinimalCoupler
     void FluidParticipantImplementation::initialize()
     {
         // 1. Preprocess any meshes
-        std::cout << "[FLUID] Starting initialization..." << std::endl;
+        MINIMALCOUPLER_INFO("Starting initialization...");
 
         // 2. Setup communication between Fluid and solid participants
-        std::cout << "[FLUID] Waiting for Solid to connect..." << std::endl;
+        MINIMALCOUPLER_INFO("Waiting for Solid to connect...");
         solidSocket = getSolidConnectionSocket();
-        std::cout << "[FLUID] Solid connected! Socket: " << solidSocket << std::endl;
+        MINIMALCOUPLER_INFO("Solid connected!");
 
         // 3. Transfer vertices from participant sender to receiver
         sendMeshVertices();
@@ -57,7 +58,8 @@ namespace MinimalCoupler
 
         // 6. Map Read Data
         mapReadData();
-        std::cout << "[FLUID] Initialization complete!" << std::endl;
+
+        MINIMALCOUPLER_INFO("Initialization complete!");
     }
 
 
@@ -101,23 +103,23 @@ namespace MinimalCoupler
     {
         size_t size;
         recv(solidSocket, &size, sizeof(size), 0);
-        std::cout << "[FLUID] Receiving " << size << " vertices from Solid" << std::endl;
+        MINIMALCOUPLER_INFO("Receiving ", size, " vertices from Solid");
 
         if (size > 0)
         {
             std::vector<Point> vertices(size);
             recv(solidSocket, vertices.data(), size * sizeof(Point), MSG_WAITALL);
 
-            std::cout << "[FLUID] Solid mesh vertices set." << std::endl;
+            MINIMALCOUPLER_INFO("Solid mesh vertices set.");
             _meshes.at("Solid-Mesh")->setMeshVertices(vertices);
             _meshes.at("Solid-Mesh")->allocateDataFields();
 
-            std::cout << "[FLUID] Vertices received:" << std::endl;
+            MINIMALCOUPLER_INFO("Vertices received:");
             for (size_t i = 0; i < vertices.size(); ++i)
             {
                 std::cout << "  Vertex " << i << ": (" << vertices[i].x << ", " << vertices[i].y << ")" << std::endl;
             }
-            std::cout << "[FLUID] Solid mesh vertices set." << std::endl;
+            MINIMALCOUPLER_INFO("Vertices received:");
         }
     }
 
@@ -148,7 +150,8 @@ namespace MinimalCoupler
 
     void FluidParticipantImplementation::computeMappings()
     {
-        std::cout << "[FLUID] Computing mappings between Fluid and Solid meshes..." << std::endl;
+
+        MINIMALCOUPLER_INFO("Computing mappings between Fluid and Solid meshes...");
         NearestNeighbor nnMapper;
 
         const auto& fluidMeshVertices = _meshes.at("Fluid-Mesh")->getMeshVertices();
@@ -156,18 +159,18 @@ namespace MinimalCoupler
 
         auto fluidToSolidMapping = nnMapper.computeNearestNeighbors(solidMeshVertices, fluidMeshVertices);
 
-        std::cout << "[FLUID] Fluid to Solid Mapping (write):" << std::endl;
+        MINIMALCOUPLER_INFO("Fluid to Solid Mapping (write):");
         for(const auto &m: fluidToSolidMapping)
         {
-            std::cout << "  Fluid Vertex maps to Solid Vertex " << m.id << ": (" << m.x << ", " << m.y << ")" << std::endl;
+            MINIMALCOUPLER_INFO("Fluid Vertex maps to Solid Vertex ", m.id, ": (", m.x, ", ", m.y, ")");
         }
 
         auto solidToFluidMapping = nnMapper.computeNearestNeighbors(fluidMeshVertices, solidMeshVertices);
 
-        std::cout << "[FLUID] Solid to Fluid Mapping (read):" << std::endl;
+        MINIMALCOUPLER_INFO("Solid to Fluid Mapping (read):");
         for(const auto &m: solidToFluidMapping)
         {
-            std::cout << "  Solid Vertex maps to Fluid Vertex " << m.id << ": (" << m.x << ", " << m.y << ")" << std::endl;
+            MINIMALCOUPLER_INFO("Solid Vertex maps to Fluid Vertex", m.id, ": (", m.x, ", ", m.y, ")");
         }
 
         _meshes.at("Fluid-Mesh")->setWriteMapping(std::move(fluidToSolidMapping));
@@ -197,7 +200,7 @@ namespace MinimalCoupler
 
         NearestNeighbor::mapConsistent(_meshes.at("Fluid-Mesh")->getReadMapping(), solidDispData, fluidDispData, _meshes.at("Fluid-Mesh")->getMeshDimensions());
 
-        std::cout << "[FLUID] Fluid mesh Displacement data after mapping:" << std::endl;
+        MINIMALCOUPLER_INFO("Fluid mesh Displacement data after mapping:");
         int dim = _meshes.at("Fluid-Mesh")->getMeshDimensions();
         for (size_t i = 0; i < fluidDispData.size(); i += dim) {
             std::cout << "  Vertex " << i/dim << ": (" << fluidDispData[i] << ", " << fluidDispData[i+1] << ")" << std::endl;

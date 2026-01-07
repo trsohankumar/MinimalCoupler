@@ -1,6 +1,7 @@
 #include "coupling.hpp"
 #include <sys/socket.h>
 #include <iostream>
+#include "logger/logger.hpp"
 
 namespace MinimalCoupler
 {
@@ -48,13 +49,13 @@ namespace MinimalCoupler
             // send data
             size_t forceSize = fluidData.size();
             send(remoteSocket, &forceSize, sizeof(forceSize), 0);
-            std::cout << "[FLUID] Sending " << forceSize << " force data to Solid" << std::endl;
+            MINIMALCOUPLER_INFO("Sending ", forceSize, " force data to Solid");
             send(remoteSocket, fluidData.data(), forceSize * sizeof(double), 0);
 
             // Now it must get displacement data from the Solid participant
             size_t dispSize;
             recv(remoteSocket, &dispSize, sizeof(dispSize), 0);
-            std::cout << "[FLUID] Receiving " << dispSize << " Displacement data from Solid" << std::endl;
+            MINIMALCOUPLER_INFO("Receiving ", dispSize, " Displacement data from Solid");
             std::vector<double> dispData(dispSize);
             recv(remoteSocket, dispData.data(), dispSize * sizeof(double), MSG_WAITALL);
 
@@ -70,7 +71,7 @@ namespace MinimalCoupler
             // Now it must get force data from the Fluid participant
             size_t forceSize;
             recv(remoteSocket, &forceSize, sizeof(forceSize), 0);
-            std::cout << "[SOLID] Receiving " << forceSize << " force data from Fluid" << std::endl;
+            MINIMALCOUPLER_INFO("Receiving ", forceSize, " force data from Fluid");
             std::vector<double> forceData(forceSize);
             recv(remoteSocket, forceData.data(), forceSize * sizeof(double), MSG_WAITALL);
 
@@ -80,7 +81,7 @@ namespace MinimalCoupler
             const auto& solidData = mesh->getDataField("Displacement", _currentTime);
             size_t dispSize = solidData.size();
             send(remoteSocket, &dispSize, sizeof(dispSize), 0);
-            std::cout << "[SOLID] Sending " << dispSize << " Displacement data to Fluid" << std::endl;
+            MINIMALCOUPLER_INFO("Sending ", dispSize, " Displacement data to Fluid");
             send(remoteSocket, solidData.data(), dispSize * sizeof(double), 0);
 
         }

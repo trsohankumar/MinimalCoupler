@@ -1,4 +1,5 @@
 #include "ParticipantImpl.hpp"
+#include "logger/logger.hpp"
 
 namespace MinimalCoupler
 {
@@ -19,6 +20,9 @@ namespace MinimalCoupler
         {
             _remoteParticipantName = "Solid";
         }
+
+        MINIMALCOUPLER_INFO("I am participant ", _participantName);
+        MINIMALCOUPLER_INFO("My remote participant is ", _remoteParticipantName);
     }
 
     const std::string& ParticipantImplementation::getParticipantName() const
