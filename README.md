@@ -31,11 +31,11 @@ cd build
 cmake ..
 ```
 
-3. Build the library
+3. Build the library:
 ```bash
 make
 ```
 
-### Build Outpu
+### Build Output
 The buld process generates:
 - `libprecice.so.3` - The shared library
