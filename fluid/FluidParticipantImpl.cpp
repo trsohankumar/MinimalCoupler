@@ -12,12 +12,19 @@
 namespace MinimalCoupler
 {
 
-    FluidParticipantImplementation::FluidParticipantImplementation(precice::string_view participantName, precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize)
+    FluidParticipantImplementation::FluidParticipantImplementation(
+        precice::string_view participantName,
+        precice::string_view configurationFileName,
+        int solverProcessIndex,
+        int solverProcessSize)
         : ParticipantImplementation(participantName, configurationFileName, solverProcessIndex, solverProcessSize), solidSocket(-1)
     {
+        
+        // setup coupling scheme max Time an window size
         getCouplingScheme().setMaxTime(1.0);
         getCouplingScheme().setTimeWindowSize(0.1);
 
+        // Fluid has two meshes one that it provdes and another that it recieves from the Solid. Both have two data vectors
         auto providedMesh = std::make_unique<Mesh>();
         providedMesh->setMeshName(getParticipantName() + "-Mesh");
         providedMesh->addDataToMesh("Force", getCouplingScheme().getCurrentTime());
@@ -34,6 +41,7 @@ namespace MinimalCoupler
 
         _meshes[std::string(receivedMesh->getMeshName())] = std::move(receivedMesh);
 
+        // setup logging into a file
         Logger::getInstance().setLogFile("Fluid.log");
     }
 
@@ -48,7 +56,7 @@ namespace MinimalCoupler
         MINIMALCOUPLER_INFO("Solid connected!");
 
         // 3. Transfer vertices from participant sender to receiver
-        sendMeshVertices();
+        receiveMeshVertices();
         
         // compute mappings between meshes
         // The participant that receives the mesh MUST compute mappings in both the read and write directions
@@ -67,6 +75,7 @@ namespace MinimalCoupler
 
     int FluidParticipantImplementation::getSolidConnectionSocket() const
     {
+        // Fluid acts as a server in the TCP connects. So it binds to a port and Listens for solid connection
         int sock = socket(AF_INET, SOCK_STREAM, 0);
         if (sock < 0)
         {
@@ -101,8 +110,9 @@ namespace MinimalCoupler
         return client;
     }
 
-    void FluidParticipantImplementation::sendMeshVertices() const
+    void FluidParticipantImplementation::receiveMeshVertices() const
     {
+        // recieves mesh vertices from the Solid Participant
         size_t size;
         recv(solidSocket, &size, sizeof(size), 0);
         MINIMALCOUPLER_INFO("Receiving ", size, " vertices from Solid");
@@ -118,13 +128,18 @@ namespace MinimalCoupler
         }
     }
 
-    int FluidParticipantImplementation::getMeshDimensions(precice::string_view meshName) const
+    int FluidParticipantImplementation::getMeshDimensions(
+        precice::string_view meshName) const
     {
         return _meshes.at(std::string(meshName))->getMeshDimensions();
     }
 
-    void FluidParticipantImplementation::setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates, precice::span<VertexID> ids)
+    void FluidParticipantImplementation::setMeshVertices(
+        precice::string_view meshName,
+        precice::span<const double> coordinates,
+        precice::span<int> ids)
     {
+        // recieves flat point vector from user and contructs a vector of points for the participants mesh
         auto &mesh = _meshes.at(std::string(meshName));
         int dim = mesh->getMeshDimensions();
 
@@ -132,9 +147,9 @@ namespace MinimalCoupler
         vertices.reserve(coordinates.size() / dim);
 
         for (size_t i = 0; i < coordinates.size(); i += dim)
-        { 
+        {
 
-            ids[i / dim] = static_cast<VertexID>(i / dim);
+            ids[i / dim] = static_cast<precice::VertexID>(i / dim);
             Point v {ids[i/dim], coordinates[i], coordinates[i + 1]};
             vertices.emplace_back(std::move(v));
         }
@@ -146,6 +161,7 @@ namespace MinimalCoupler
     void FluidParticipantImplementation::computeMappings()
     {
 
+        // Here we compute vertex mapping from Solid -> FLuid mesh and Fluid-> Solid. This will help in further read and write data mappings
         MINIMALCOUPLER_INFO("Computing mappings between Fluid and Solid meshes vertices");
         NearestNeighbor nnMapper;
 
@@ -175,6 +191,7 @@ namespace MinimalCoupler
 
     void FluidParticipantImplementation::mapWriteData()
     {
+        // Before sending force data to solid, the data is mapped from FLuid mesh to solid mesh
         const auto& fluidForceData = _meshes.at("Fluid-Mesh")->getDataField("Force", getCouplingScheme().getCurrentTime());
 
         auto& solidForceData = _meshes.at("Solid-Mesh")->getDataField("Force", getCouplingScheme().getCurrentTime());
@@ -191,6 +208,7 @@ namespace MinimalCoupler
     
     void FluidParticipantImplementation::mapReadData()
     {
+        // After receiving displacement data from solid, disp data is mapped from Solid mesh to Fluid mesh
         auto& fluidDispData = _meshes.at("Fluid-Mesh")->getDataField("Displacement", getCouplingScheme().getCurrentTime());
 
         const auto& solidDispData = _meshes.at("Solid-Mesh")->getDataField("Displacement", getCouplingScheme().getCurrentTime());
@@ -206,15 +224,25 @@ namespace MinimalCoupler
         }
     }
 
-    void FluidParticipantImplementation::readData(const std::string &meshName, const std::string &dataName, const std::vector<int> &vertexIDs, double relativeReadTime, std::vector<double> &values) const
+    void FluidParticipantImplementation::readData(
+        const std::string &meshName,
+        const std::string &dataName,
+        const std::vector<int> &vertexIDs,
+        double relativeReadTime,
+        std::vector<double> &values) const
     {
     }
 
-    void FluidParticipantImplementation::writeData(const std::string &meshName, const std::string &dataName, const std::vector<int> &vertexIDs, const std::vector<double> &values)
+    void FluidParticipantImplementation::writeData(
+        const std::string &meshName,
+        const std::string &dataName,
+        const std::vector<int> &vertexIDs,
+        const std::vector<double> &values)
     {
     }
 
-    void FluidParticipantImplementation::advance(double computedTimeStepSize)
+    void FluidParticipantImplementation::advance(
+        double computedTimeStepSize)
     {
     }
 
@@ -248,7 +276,8 @@ namespace MinimalCoupler
         return 1.0;
     }
 
-    void FluidParticipantImplementation::startProfilingSection(const std::string &name)
+    void FluidParticipantImplementation::startProfilingSection(
+        const std::string &name)
     {
     }
 

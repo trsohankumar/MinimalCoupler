@@ -12,12 +12,18 @@
 namespace MinimalCoupler
 {
 
-    SolidParticipantImplementation::SolidParticipantImplementation(precice::string_view participantName,precice::string_view configurationFileName,int solverProcessIndex, int solverProcessSize)
+    SolidParticipantImplementation::SolidParticipantImplementation(
+        precice::string_view participantName,
+        precice::string_view configurationFileName,
+        int solverProcessIndex,
+        int solverProcessSize)
         : ParticipantImplementation(participantName, configurationFileName, solverProcessIndex, solverProcessSize), fluidSocket(-1)
     {
+        // setup coupling scheme max Time an window size
         getCouplingScheme().setMaxTime(1.0);
         getCouplingScheme().setTimeWindowSize(0.1);
 
+        // Solid only provides one mesh with two data vectors
         auto providedMesh = std::make_unique<Mesh>();
         providedMesh->setMeshName(getParticipantName() + "-Mesh");
         providedMesh->addDataToMesh("Force", getCouplingScheme().getCurrentTime());
@@ -27,6 +33,7 @@ namespace MinimalCoupler
         auto meshKey = std::string(providedMesh->getMeshName());
         _meshes[meshKey] = std::move(providedMesh);
 
+        // Set up loggin to a file
         Logger::getInstance().setLogFile("Solid.log");
     }
 
@@ -35,6 +42,7 @@ namespace MinimalCoupler
     {
         // 1. Preprocess any meshes
         MINIMALCOUPLER_INFO("Starting initialization...");
+        
         //2. Setup communication between Fluid and solid participants
         fluidSocket = getFluidConnectionSocket();
         MINIMALCOUPLER_INFO("Connected to Fluid!");
@@ -43,6 +51,7 @@ namespace MinimalCoupler
         sendMeshVertices();
 
         //4. Map Write Data (Not needed here as it does not receive any meshes)
+
         //5. Initialize the coupling scheme
         getCouplingScheme().initialize(getParticipantName(), _meshes.at("Solid-Mesh").get(), fluidSocket);
 
@@ -53,6 +62,7 @@ namespace MinimalCoupler
 
     int SolidParticipantImplementation::getFluidConnectionSocket() const
     {
+        // Solid socket acts like a client, so it keeps retrying after 1s to connect to the Flui(Server)
         int sock = socket(AF_INET, SOCK_STREAM, 0);
         if (sock < 0)
         {
@@ -64,7 +74,7 @@ namespace MinimalCoupler
         serverAddress.sin_port = htons(5001);
         serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  
 
-        // Try to implement a retry mechanism here
+        // Retry mechanism
         bool connected = false;
         while (!connected)
         {
@@ -84,6 +94,7 @@ namespace MinimalCoupler
 
     void SolidParticipantImplementation::sendMeshVertices() const
     {
+        // function sends mesh vertices to Fluid participant
         std::string meshName = getParticipantName() + "-Mesh";
 
         size_t size = _meshes.at(meshName)->getVertexCount();
@@ -105,14 +116,18 @@ namespace MinimalCoupler
 
     }
 
-    
-    int SolidParticipantImplementation::getMeshDimensions(precice::string_view meshName) const
+    int SolidParticipantImplementation::getMeshDimensions(
+        precice::string_view meshName) const
     {
         return _meshes.at(std::string(meshName))->getMeshDimensions();
     }
 
-    void SolidParticipantImplementation::setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates, precice::span<VertexID> ids)
+    void SolidParticipantImplementation::setMeshVertices(
+        precice::string_view meshName,
+        precice::span<const double> coordinates,
+        precice::span<int> ids)
     {
+        // recieves flat point vector from user and contructs a vector of points for the participants mesh
         auto& mesh = _meshes[std::string(meshName)];
         int dim = mesh->getMeshDimensions();
 
@@ -121,7 +136,7 @@ namespace MinimalCoupler
 
         for (size_t i = 0; i < coordinates.size(); i += dim)
         {
-            ids[i / dim] = static_cast<VertexID>(i / dim);
+            ids[i / dim] = static_cast<precice::VertexID>(i / dim);
             Point v {ids[i/dim], coordinates[i], coordinates[i + 1]};
             vertices.emplace_back(std::move(v));
         }
@@ -131,17 +146,27 @@ namespace MinimalCoupler
     }
 
     // Data exchange methods
-    void SolidParticipantImplementation::readData(const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, double relativeReadTime, std::vector<double>& values) const
+    void SolidParticipantImplementation::readData(
+        const std::string& meshName,
+        const std::string& dataName,
+        const std::vector<int>& vertexIDs,
+        double relativeReadTime,
+        std::vector<double>& values) const
     {
 
     }
 
-    void SolidParticipantImplementation::writeData( const std::string& meshName, const std::string& dataName, const std::vector<int>& vertexIDs, const std::vector<double>& values)
+    void SolidParticipantImplementation::writeData(
+        const std::string& meshName,
+        const std::string& dataName,
+        const std::vector<int>& vertexIDs,
+        const std::vector<double>& values)
     {
 
     }
 
-    void SolidParticipantImplementation::advance(double computedTimeStepSize)
+    void SolidParticipantImplementation::advance(
+        double computedTimeStepSize)
     {
 
     }
@@ -176,7 +201,8 @@ namespace MinimalCoupler
         return 1.0;
     }
 
-    void SolidParticipantImplementation::startProfilingSection(const std::string& name)
+    void SolidParticipantImplementation::startProfilingSection(
+        const std::string& name)
     {
 
     }
