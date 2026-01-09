@@ -21,7 +21,7 @@ namespace MinimalCoupler
         {
             logFile_.close();
         }
-        logFile_.open(filename, std::ios::app);
+        logFile_.open(filename);
     }
 
     Logger::Logger() : minLevel_(LogLevel::INFO) {}

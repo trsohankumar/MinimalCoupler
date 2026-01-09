@@ -27,6 +27,7 @@ namespace MinimalCoupler
         auto meshKey = std::string(providedMesh->getMeshName());
         _meshes[meshKey] = std::move(providedMesh);
 
+        Logger::getInstance().setLogFile("Solid.log");
     }
 
 
@@ -47,6 +48,7 @@ namespace MinimalCoupler
 
         //6. Map Read Data (Not needed here as it does not receive any meshes)
         MINIMALCOUPLER_INFO("Initialization complete!");
+
     }
 
     int SolidParticipantImplementation::getFluidConnectionSocket() const
@@ -84,7 +86,6 @@ namespace MinimalCoupler
     {
         std::string meshName = getParticipantName() + "-Mesh";
 
-        MINIMALCOUPLER_INFO("Looking up mesh with key: ", meshName);
         size_t size = _meshes.at(meshName)->getVertexCount();
         MINIMALCOUPLER_INFO("Sending ", size, " vertices");
         send(fluidSocket, &size, sizeof(size), 0);
@@ -93,10 +94,10 @@ namespace MinimalCoupler
         {
             auto vertices = _meshes.at(meshName)->getMeshVertices();
 
-            MINIMALCOUPLER_INFO("Vertices being sent:");
+            MINIMALCOUPLER_FILE_INFO("Vertices being sent:");
             for (size_t i = 0; i < vertices.size(); ++i)
             {
-                MINIMALCOUPLER_DEBUG("Vertex ", i, ": (", vertices[i].x, ", ", vertices[i].y, ")");
+                MINIMALCOUPLER_FILE_INFO("Vertex ", i, ": (", vertices[i].x, ", ", vertices[i].y, ")");
             }
 
             send(fluidSocket, vertices.data(), size * sizeof(Point), 0);

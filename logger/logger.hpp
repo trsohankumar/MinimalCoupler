@@ -26,7 +26,7 @@ public:
     void setLogFile(const std::string& filename);
 
     template<typename... Args>
-    void console(LogLevel level, Args&&... args) {
+    void console(LogLevel level, Args&&... args) const {
         if (level < minLevel_)
             return;
 

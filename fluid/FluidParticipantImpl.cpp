@@ -33,6 +33,8 @@ namespace MinimalCoupler
         receivedMesh->setMeshDimensions(2);
 
         _meshes[std::string(receivedMesh->getMeshName())] = std::move(receivedMesh);
+
+        Logger::getInstance().setLogFile("Fluid.log");
     }
 
     void FluidParticipantImplementation::initialize()
@@ -113,13 +115,6 @@ namespace MinimalCoupler
             MINIMALCOUPLER_INFO("Solid mesh vertices set.");
             _meshes.at("Solid-Mesh")->setMeshVertices(vertices);
             _meshes.at("Solid-Mesh")->allocateDataFields();
-
-            MINIMALCOUPLER_INFO("Vertices received:");
-            for (size_t i = 0; i < vertices.size(); ++i)
-            {
-                std::cout << "  Vertex " << i << ": (" << vertices[i].x << ", " << vertices[i].y << ")" << std::endl;
-            }
-            MINIMALCOUPLER_INFO("Vertices received:");
         }
     }
 
@@ -151,7 +146,7 @@ namespace MinimalCoupler
     void FluidParticipantImplementation::computeMappings()
     {
 
-        MINIMALCOUPLER_INFO("Computing mappings between Fluid and Solid meshes...");
+        MINIMALCOUPLER_INFO("Computing mappings between Fluid and Solid meshes vertices");
         NearestNeighbor nnMapper;
 
         const auto& fluidMeshVertices = _meshes.at("Fluid-Mesh")->getMeshVertices();
@@ -159,18 +154,19 @@ namespace MinimalCoupler
 
         auto fluidToSolidMapping = nnMapper.computeNearestNeighbors(solidMeshVertices, fluidMeshVertices);
 
-        MINIMALCOUPLER_INFO("Fluid to Solid Mapping (write):");
+        MINIMALCOUPLER_FILE_INFO("Fluid to Solid Mapping (write):");
         for(const auto &m: fluidToSolidMapping)
         {
-            MINIMALCOUPLER_INFO("Fluid Vertex maps to Solid Vertex ", m.id, ": (", m.x, ", ", m.y, ")");
+            MINIMALCOUPLER_FILE_INFO("Fluid Vertex: (", fluidMeshVertices[m.id].x, ",", fluidMeshVertices[m.id].y, ") maps to Solid Vertex ", m.id, ": (", m.x, ", ", m.y, ")");
         }
 
+        MINIMALCOUPLER_INFO("Computing mappings between Solid and Fluid meshes vertices");
         auto solidToFluidMapping = nnMapper.computeNearestNeighbors(fluidMeshVertices, solidMeshVertices);
 
-        MINIMALCOUPLER_INFO("Solid to Fluid Mapping (read):");
+        MINIMALCOUPLER_FILE_INFO("Solid to Fluid Mapping (read):");
         for(const auto &m: solidToFluidMapping)
         {
-            MINIMALCOUPLER_INFO("Solid Vertex maps to Fluid Vertex", m.id, ": (", m.x, ", ", m.y, ")");
+            MINIMALCOUPLER_FILE_INFO("Solid Vertex: (", solidMeshVertices[m.id].x, ",", solidMeshVertices[m.id].y, ") maps to Fluid Vertex ", m.id, ": (", m.x, ", ", m.y, ")");
         }
 
         _meshes.at("Fluid-Mesh")->setWriteMapping(std::move(fluidToSolidMapping));
@@ -185,10 +181,11 @@ namespace MinimalCoupler
 
         NearestNeighbor::mapConservative(_meshes.at("Fluid-Mesh")->getWriteMapping(), fluidForceData, solidForceData, _meshes.at("Fluid-Mesh")->getMeshDimensions());
 
-        std::cout << "[FLUID] Solid mesh Force data after mapping:" << std::endl;
+        MINIMALCOUPLER_INFO("Mapping force data from Fluid to Solid");
+        MINIMALCOUPLER_FILE_INFO("Mapping force data from Fluid to Solid");
         int dim = _meshes.at("Solid-Mesh")->getMeshDimensions();
         for (size_t i = 0; i < solidForceData.size(); i += dim) {
-            std::cout << "  Vertex " << i/dim << ": (" << solidForceData[i] << ", " << solidForceData[i+1] << ")" << std::endl;
+            MINIMALCOUPLER_FILE_INFO("Vertex ", i/dim, ": (",  solidForceData[i], ", ", solidForceData[i+1], ")");
         }
     }
     
@@ -200,10 +197,12 @@ namespace MinimalCoupler
 
         NearestNeighbor::mapConsistent(_meshes.at("Fluid-Mesh")->getReadMapping(), solidDispData, fluidDispData, _meshes.at("Fluid-Mesh")->getMeshDimensions());
 
-        MINIMALCOUPLER_INFO("Fluid mesh Displacement data after mapping:");
+        MINIMALCOUPLER_INFO("Mapping displacement data from Solid mesh to Fluid mesh");
+        MINIMALCOUPLER_FILE_INFO("Mapping displacement data from Solid mesh to Fluid mesh");
         int dim = _meshes.at("Fluid-Mesh")->getMeshDimensions();
         for (size_t i = 0; i < fluidDispData.size(); i += dim) {
-            std::cout << "  Vertex " << i/dim << ": (" << fluidDispData[i] << ", " << fluidDispData[i+1] << ")" << std::endl;
+            
+            MINIMALCOUPLER_FILE_INFO("Vertex ", i/dim, ": (", fluidDispData[i], ", ", fluidDispData[i+1], ")");
         }
     }
 
