@@ -251,9 +251,9 @@ namespace MinimalCoupler
         close(solidSocket);
     }
 
-    bool FluidParticipantImplementation::isCouplingOngoing() const
+    bool FluidParticipantImplementation::isCouplingOngoing() 
     {
-        return false;
+        return getCouplingScheme().isCouplingOnGoing();
     }
 
     bool FluidParticipantImplementation::requiresInitialData() const
@@ -271,11 +271,15 @@ namespace MinimalCoupler
         return false;
     }
 
-    double FluidParticipantImplementation::getMaxTimeStepSize() const
+    double FluidParticipantImplementation::getMaxTimeStepSize() 
     {
-        return 1.0;
+        return getCouplingScheme().getMaxTimeStepSize();
     }
 
+    bool isTimeWindowComplete() 
+    {
+
+    }
     void FluidParticipantImplementation::startProfilingSection(
         const std::string &name)
     {

@@ -166,7 +166,7 @@ namespace precice
 
     bool Participant::isTimeWindowComplete() const
     {
-        return true; // TODO: implement properly
+        return _impl->isTimeWindowComplete();
     }
 
     // Mesh topology methods

@@ -48,12 +48,13 @@ namespace MinimalCoupler
         void finalize() override;
 
         // Status queries
-        bool isCouplingOngoing() const override;
+        bool isCouplingOngoing() override;
         bool requiresInitialData() const override;
         bool requiresWritingCheckpoint() const override;
         bool requiresReadingCheckpoint() const override;
 
-        double getMaxTimeStepSize() const override;
+        bool isTimeWindowComplete() override;
+        double getMaxTimeStepSize() override;
 
         // Profiling
         void startProfilingSection(

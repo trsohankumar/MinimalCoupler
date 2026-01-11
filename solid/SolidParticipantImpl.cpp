@@ -176,9 +176,9 @@ namespace MinimalCoupler
         close(fluidSocket);
     }
 
-    bool SolidParticipantImplementation::isCouplingOngoing() const
+    bool SolidParticipantImplementation::isCouplingOngoing() 
     {
-        return false;
+        return getCouplingScheme().isCouplingOnGoing();
     }
 
     bool SolidParticipantImplementation::requiresInitialData() const
@@ -196,9 +196,9 @@ namespace MinimalCoupler
         return false;
     }
 
-    double SolidParticipantImplementation::getMaxTimeStepSize() const
+    double SolidParticipantImplementation::getMaxTimeStepSize()
     {
-        return 1.0;
+        return getCouplingScheme().getMaxTimeStepSize();
     }
 
     void SolidParticipantImplementation::startProfilingSection(

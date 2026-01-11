@@ -7,7 +7,7 @@ namespace MinimalCoupler
 {
 
     CouplingScheme::CouplingScheme()
-        : _maxTime(0.0), _timeWindowSize(0.0), _currentTime(0.0)
+        : _maxTime(0.0), _timeWindowSize(0.0), _currentTime(0.0), _currentTimeWindowNumber(1)
     {
     }
 
@@ -15,14 +15,17 @@ namespace MinimalCoupler
     {
         return _maxTime;
     }
+
     double CouplingScheme::getTimeWinowSize() const
     {
         return _timeWindowSize;
     }
+
     double CouplingScheme::getCurrentTime() const
     {
         return _currentTime;
     }
+
     void CouplingScheme::setCurrentTime(double time)
     {
         _currentTime = time;
@@ -86,5 +89,15 @@ namespace MinimalCoupler
 
         }
 
+    }
+
+    bool CouplingScheme::isCouplingOnGoing() const 
+    {
+        return !(_currentTime == _maxTime);
+    }
+
+    double CouplingScheme::getMaxTimeStepSize() const
+    {
+        return (_timeWindowSize * _currentTimeWindowNumber) - (_currentTime);
     }
 }

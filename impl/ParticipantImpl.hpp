@@ -52,12 +52,13 @@ public:
     virtual void finalize() = 0;
 
     // Status queries
-    virtual bool isCouplingOngoing() const = 0;
+    virtual bool isCouplingOngoing() = 0;
     virtual bool requiresInitialData() const = 0;
     virtual bool requiresWritingCheckpoint() const = 0;
     virtual bool requiresReadingCheckpoint() const = 0;
 
-    virtual double getMaxTimeStepSize() const = 0;
+    virtual bool isTimeWindowComplete() const = 0;
+    virtual double getMaxTimeStepSize() = 0;
 
     // Profiling
     virtual void startProfilingSection(
