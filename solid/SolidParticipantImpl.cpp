@@ -153,7 +153,34 @@ namespace MinimalCoupler
         double relativeReadTime,
         std::vector<double>& values) const
     {
+        if (!_meshes.contains(meshName))
+        {
+            throw std::runtime_error("Mesh with name " + meshName + " not found");
+        }
+        auto& mesh = _meshes.at(meshName);
 
+        if (!mesh->checkIfDataFieldExists(dataName))
+        {
+            throw std::runtime_error("Data field with name " + dataName + " not found");
+        }
+
+        for (auto id : vertexIDs)
+        {
+            if (!mesh->checkIfVertexIdExists(id))
+            {
+                throw std::runtime_error("Vertex with id " + std::to_string(id) + " does not exist");
+            }
+        }
+
+        if (vertexIDs.size() * mesh->getMeshDimensions() == values.size())
+        {
+            throw std::runtime_error("The value array provided is not enough to store all the data values");
+        }
+
+        double absoluteTime = getCouplingScheme().getCurrentTime() + relativeReadTime;
+
+        MINIMALCOUPLER_INFO("Reading data '", dataName, "' from mesh '", meshName, "' for ", vertexIDs.size(), " vertices at time ", absoluteTime);
+        mesh->getDataForVertexId(dataName, vertexIDs, values, absoluteTime);
     }
 
     void SolidParticipantImplementation::writeData(
@@ -162,13 +189,13 @@ namespace MinimalCoupler
         const std::vector<int>& vertexIDs,
         const std::vector<double>& values)
     {
-
+        MINIMALCOUPLER_INFO("Writing data '", dataName, "' to mesh '", meshName, "' for ", vertexIDs.size(), " vertices");
     }
 
     void SolidParticipantImplementation::advance(
         double computedTimeStepSize)
     {
-
+        getCouplingScheme().advance(computedTimeStepSize);
     }
 
     void SolidParticipantImplementation::finalize()
@@ -199,6 +226,11 @@ namespace MinimalCoupler
     double SolidParticipantImplementation::getMaxTimeStepSize()
     {
         return getCouplingScheme().getMaxTimeStepSize();
+    }
+
+    bool SolidParticipantImplementation::isTimeWindowComplete()
+    {
+        return getCouplingScheme().isTimeWindowComplete();
     }
 
     void SolidParticipantImplementation::startProfilingSection(

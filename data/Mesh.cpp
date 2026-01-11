@@ -80,4 +80,38 @@ std::vector<double>& Mesh::getDataField(const std::string& dataName, double time
 {
     return _dataFields.at(dataName).at(timestamp);
 }
+
+bool Mesh::checkIfDataFieldExists(const std::string& dataName) const
+{
+    return _dataFields.contains(dataName);
+}
+
+bool Mesh::checkIfVertexIdExists(const int vertexId) const
+{
+    return vertexId < _vertices.size();
+}
+
+void Mesh::getDataForVertexId(const std::string& dataName, const std::vector<int>& vertexId, std::vector<double>& values, double absoluteTime)
+{
+    // find data that was stored at time that is closest to absoluteTime
+    auto it = _dataFields.at(dataName).upper_bound(absoluteTime);
+
+    // move to last idx as this would be the closest time
+    it--;
+
+    // get the data vector at the closest timestamp
+    const std::vector<double>& dataVector = it->second;
+
+    // store the data for each vertexId in the values array
+    size_t outputIdx = 0;
+    for (int vid : vertexId) {
+        size_t startIdx = vid * _dimensions;
+
+        for (int d = 0; d < _dimensions; ++d) {
+            values[outputIdx] = dataVector[startIdx + d];
+            outputIdx++;
+        }
+    }
+}
+
 }

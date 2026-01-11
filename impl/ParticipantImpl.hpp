@@ -57,7 +57,7 @@ public:
     virtual bool requiresWritingCheckpoint() const = 0;
     virtual bool requiresReadingCheckpoint() const = 0;
 
-    virtual bool isTimeWindowComplete() const = 0;
+    virtual bool isTimeWindowComplete()  = 0;
     virtual double getMaxTimeStepSize() = 0;
 
     // Profiling
@@ -72,13 +72,13 @@ protected:
     const std::string& getConfigFileName() const;
     int getRank() const;
     int getSize() const;
-    CouplingScheme& getCouplingScheme();
+    CouplingScheme& getCouplingScheme() const;
 
 private:
     std::string _participantName;
     std::string _remoteParticipantName;
     std::string _configFileName;
-    CouplingScheme couplingScheme;
+    mutable CouplingScheme couplingScheme;
     int _rank;
     int _size;
 

@@ -16,8 +16,10 @@ namespace MinimalCoupler
         void setMaxTime(double maxTime);
         void setTimeWindowSize(double timeWindowSize);
         void initialize(precice::string_view participantName, Mesh* mesh, int remoteSocket) const;
+        void advance(double computedTimeStepSize);
         bool isCouplingOnGoing() const;
         double getMaxTimeStepSize() const;
+        bool isTimeWindowComplete() const;
 
     private:
         double _maxTime;

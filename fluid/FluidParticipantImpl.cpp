@@ -231,6 +231,35 @@ namespace MinimalCoupler
         double relativeReadTime,
         std::vector<double> &values) const
     {
+        // check if meshName exists
+        if (!_meshes.contains(meshName))
+        {
+            throw std::runtime_error("Mesh with name " + meshName +  " not found");
+        }
+        auto & mesh = _meshes.at(meshName);
+        // check if data name exists
+        if (!mesh->checkIfDataFieldExists(dataName))
+        {
+            throw std::runtime_error("Data field with name " + dataName +  " not found");
+        }
+        // check if all the vertex locations are actually correct
+        for (auto id: vertexIDs)
+        {
+            if (!mesh->checkIfVertexIdExists(id))
+            {
+                throw std::runtime_error("Vertex with id " + std::to_string(id) + " does not exist");
+            }
+        } 
+        // check if size of value = size of vertexIds * dimensions =  size of values
+        if (vertexIDs.size() * mesh->getMeshDimensions() == values.size())
+        {
+            throw std::runtime_error("The value error provided is not enough to store all the data values");
+        }
+        // if all of these checks succeded then find the nearest time and return the data for those vertices
+        double absoluteTime = getCouplingScheme().getCurrentTime() + relativeReadTime;
+
+        MINIMALCOUPLER_INFO("Reading data '", dataName, "' from mesh '", meshName, "' for ", vertexIDs.size(), " vertices at time ", absoluteTime);
+        mesh->getDataForVertexId(dataName, vertexIDs, values, absoluteTime);
     }
 
     void FluidParticipantImplementation::writeData(
@@ -239,11 +268,13 @@ namespace MinimalCoupler
         const std::vector<int> &vertexIDs,
         const std::vector<double> &values)
     {
+        MINIMALCOUPLER_INFO("Writing data '", dataName, "' to mesh '", meshName, "' for ", vertexIDs.size(), " vertices");
     }
 
     void FluidParticipantImplementation::advance(
         double computedTimeStepSize)
     {
+        getCouplingScheme().advance(computedTimeStepSize);
     }
 
     void FluidParticipantImplementation::finalize()
@@ -276,9 +307,9 @@ namespace MinimalCoupler
         return getCouplingScheme().getMaxTimeStepSize();
     }
 
-    bool isTimeWindowComplete() 
+    bool FluidParticipantImplementation::isTimeWindowComplete()
     {
-
+        return getCouplingScheme().isTimeWindowComplete();
     }
     void FluidParticipantImplementation::startProfilingSection(
         const std::string &name)

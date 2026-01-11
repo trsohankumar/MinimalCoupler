@@ -50,7 +50,7 @@ namespace MinimalCoupler
         return _size;
     }
 
-    CouplingScheme& ParticipantImplementation::getCouplingScheme()
+    CouplingScheme& ParticipantImplementation::getCouplingScheme() const
     {
         return couplingScheme;
     }

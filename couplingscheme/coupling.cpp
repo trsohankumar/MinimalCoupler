@@ -91,7 +91,19 @@ namespace MinimalCoupler
 
     }
 
-    bool CouplingScheme::isCouplingOnGoing() const 
+    void CouplingScheme::advance(double computedTimeStepSize)
+    {
+        _currentTime += computedTimeStepSize;
+        MINIMALCOUPLER_INFO("Time advanced by ", computedTimeStepSize, " to ", _currentTime);
+
+        if (isTimeWindowComplete())
+        {
+            _currentTimeWindowNumber++;
+            MINIMALCOUPLER_INFO("Time window ", _currentTimeWindowNumber - 1, " complete. Moving to window ", _currentTimeWindowNumber);
+        }
+    }
+
+    bool CouplingScheme::isCouplingOnGoing() const
     {
         return !(_currentTime == _maxTime);
     }
@@ -99,5 +111,10 @@ namespace MinimalCoupler
     double CouplingScheme::getMaxTimeStepSize() const
     {
         return (_timeWindowSize * _currentTimeWindowNumber) - (_currentTime);
+    }
+
+    bool CouplingScheme::isTimeWindowComplete() const
+    {
+        return _currentTime >= (_timeWindowSize * _currentTimeWindowNumber);
     }
 }
