@@ -52,11 +52,11 @@ void precice::Participant::setMeshVertices(
 
 #### Parameters
 - [in]	meshName: The name used to identify the mesh whose vertices are to be added.
-- [in] coordinates: It is a flat array of coordinates. For an n dimensional point, n consecutive values form a single coordinate.
+- [in]  coordinates: It is a flat array of coordinates. For an n dimensional point, n consecutive values form a single coordinate.
 - [out] ids	: An array of identifiers used to refer to individual coordinates.
 
 #### Description
-- The function is responsible to add vertices to  a mesh. After adding vertices, the mesh identified by meshName must have:
+The function is responsible to add vertices to  a mesh. After adding vertices, the mesh identified by meshName must have:
 - Coordinates that form the mesh points.
 - Unique identifiers to identify each of the added coordinates stored in ids.
--  Data buffers allocated for all the added vertices.
+- Data buffers allocated for all the added vertices.
