@@ -225,22 +225,22 @@ namespace MinimalCoupler
     }
 
     void FluidParticipantImplementation::readData(
-        const std::string &meshName,
-        const std::string &dataName,
-        const std::vector<int> &vertexIDs,
+        precice::string_view meshName,
+        precice::string_view dataName,
+        precice::span<const precice::VertexID> vertexIDs,
         double relativeReadTime,
-        std::vector<double> &values) const
+        precice::span<double> values) const
     {
         // check if meshName exists
-        if (!_meshes.contains(meshName))
+        if (!_meshes.contains(std::string(meshName)))
         {
-            throw std::runtime_error("Mesh with name " + meshName +  " not found");
+            throw std::runtime_error("Mesh with name " + std::string(meshName) +  " not found");
         }
-        auto & mesh = _meshes.at(meshName);
+        auto & mesh = _meshes.at(std::string(meshName));
         // check if data name exists
-        if (!mesh->checkIfDataFieldExists(dataName))
+        if (!mesh->checkIfDataFieldExists(std::string(dataName)))
         {
-            throw std::runtime_error("Data field with name " + dataName +  " not found");
+            throw std::runtime_error("Data field with name " + std::string(dataName) +  " not found");
         }
         // check if all the vertex locations are actually correct
         for (auto id: vertexIDs)
@@ -251,7 +251,7 @@ namespace MinimalCoupler
             }
         } 
         // check if size of value = size of vertexIds * dimensions =  size of values
-        if (vertexIDs.size() * mesh->getMeshDimensions() == values.size())
+        if (vertexIDs.size() * mesh->getMeshDimensions() != values.size())
         {
             throw std::runtime_error("The value error provided is not enough to store all the data values");
         }
@@ -263,12 +263,43 @@ namespace MinimalCoupler
     }
 
     void FluidParticipantImplementation::writeData(
-        const std::string &meshName,
-        const std::string &dataName,
-        const std::vector<int> &vertexIDs,
-        const std::vector<double> &values)
+        precice::string_view meshName,
+        precice::string_view dataName,
+        precice::span<const precice::VertexID> vertexIDs,
+        precice::span<const double> values)
     {
         MINIMALCOUPLER_INFO("Writing data '", dataName, "' to mesh '", meshName, "' for ", vertexIDs.size(), " vertices");
+
+        // check if meshName exists
+        if (!_meshes.contains(std::string(meshName)))
+        {
+            throw std::runtime_error("Mesh with name " + std::string(meshName) +  " not found");
+        }
+        auto & mesh = _meshes.at(std::string(meshName));
+        // check if data name exists
+        if (!mesh->checkIfDataFieldExists(std::string(dataName)))
+        {
+            throw std::runtime_error("Data field with name " + std::string(dataName) +  " not found");
+        }
+        // check if all the vertex locations are actually correct
+        for (auto id: vertexIDs)
+        {
+            if (!mesh->checkIfVertexIdExists(id))
+            {
+                throw std::runtime_error("Vertex with id " + std::to_string(id) + " does not exist");
+            }
+        } 
+        // check if size of value = size of vertexIds * dimensions =  size of values
+        if (vertexIDs.size() * mesh->getMeshDimensions() != values.size())
+        {
+            throw std::runtime_error("The value error provided is not enough to store all the data values");
+        }
+        std::vector<double> dataToStore (values.data(), values.data() + values.size());
+        // if all of these checks succeded then we just add the data to mesh for ts = end of current timewindow
+        double absoluteTime = getCouplingScheme().getCurrentTime() + getCouplingScheme().getMaxTimeStepSize();
+        // store the data into the mesh for time window
+        
+        mesh->addDataToMesh(std::string(dataName), absoluteTime, std::move(dataToStore));
     }
 
     void FluidParticipantImplementation::advance(
@@ -277,9 +308,18 @@ namespace MinimalCoupler
         getCouplingScheme().advance(computedTimeStepSize);
     }
 
+    FluidParticipantImplementation::~FluidParticipantImplementation()
+    {
+        finalize();
+    }
+
     void FluidParticipantImplementation::finalize()
     {
-        close(solidSocket);
+        if (solidSocket >= 0)
+        {
+            close(solidSocket);
+            solidSocket = -1;
+        }
     }
 
     bool FluidParticipantImplementation::isCouplingOngoing() 

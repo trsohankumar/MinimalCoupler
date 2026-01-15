@@ -16,6 +16,7 @@ namespace MinimalCoupler
             int solverProcessSize);
 
         SolidParticipantImplementation() = default;
+        ~SolidParticipantImplementation() override;
 
         // Mesh methods
         int getMeshDimensions(
@@ -26,19 +27,18 @@ namespace MinimalCoupler
             precice::span<const double> coordinates,
             precice::span<int> ids) override;
 
-        // Data exchange methods
         void readData(
-            const std::string &meshName,
-            const std::string &dataName,
-            const std::vector<int> &vertexIDs,
+            precice::string_view meshName,
+            precice::string_view dataName,
+            precice::span<const precice::VertexID> vertexIDs,
             double relativeReadTime,
-            std::vector<double> &values) const override;
+            precice::span<double> values) const override;
 
         void writeData(
-            const std::string &meshName,
-            const std::string &dataName,
-            const std::vector<int> &vertexIDs,
-            const std::vector<double> &values) override;
+            precice::string_view meshName,
+            precice::string_view dataName,
+            precice::span<const precice::VertexID> vertexIDs,
+            precice::span<const double> values) override;
 
         // Steering methods
         void initialize() override;

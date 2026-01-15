@@ -4,6 +4,7 @@
 #include <map>
 #include <unordered_map>
 #include "Point.hpp"
+#include "precice/types.hpp"
 
 namespace MinimalCoupler
 {
@@ -30,11 +31,19 @@ namespace MinimalCoupler
         const std::vector<Point> &getMeshVertices() const;
         const std::vector<Point> &getReadMapping() const;
         const std::vector<Point> &getWriteMapping() const;
-        std::vector<double> &getDataField(const std::string &dataName, double timestamp);
-        bool checkIfDataFieldExists(const std::string &dataName) const;
-        bool checkIfVertexIdExists(const int vertexId) const;
 
-        void getDataForVertexId(const std::string &dataName, const std::vector<int> &vertexId, std::vector<double> &values, double absoluteTime);
+        std::vector<double> &getDataField(const std::string &dataName, double timestamp);
+
+        bool checkIfDataFieldExists(
+            const std::string &dataName) const;
+
+        bool checkIfVertexIdExists(
+            const int vertexId) const;
+
+        void getDataForVertexId(
+            precice::string_view dataName, 
+            precice::span<const precice::VertexID> vertexId, precice::span<double> values,
+            double absoluteTime);
 
     private:
         std::string _meshName;
@@ -42,7 +51,12 @@ namespace MinimalCoupler
         std::vector<Point> _readVertexMapping;
         std::vector<Point> _writeVertexMapping;
         int _dimensions;
-        std::unordered_map<std::string, std::map<double, std::vector<double>>> _dataFields;
+        std::unordered_map<
+            std::string, 
+            std::map<
+                double, 
+                std::vector<double>>
+            > _dataFields;
         MeshType _meshType;
     };
 

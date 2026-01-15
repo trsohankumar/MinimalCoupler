@@ -31,17 +31,17 @@ public:
 
     // Data exchange methods
     virtual void readData(
-        const std::string& meshName,
-        const std::string& dataName,
-        const std::vector<int>& vertexIDs,
+        precice::string_view meshName,
+        precice::string_view dataName,
+        precice::span<const precice::VertexID> vertexIDs,
         double relativeReadTime,
-        std::vector<double>& values) const = 0;
+        precice::span<double> values) const = 0;
 
     virtual void writeData(
-        const std::string& meshName,
-        const std::string& dataName,
-        const std::vector<int>& vertexIDs,
-        const std::vector<double>& values) = 0;
+        precice::string_view meshName,
+        precice::string_view dataName,
+        precice::span<const precice::VertexID> vertexIDs,
+        precice::span<const double> values) = 0;
 
     // Steering methods
     virtual void initialize() = 0;

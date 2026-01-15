@@ -18,6 +18,7 @@ namespace MinimalCoupler
             int solverProcessSize);
 
         FluidParticipantImplementation() = default;
+        ~FluidParticipantImplementation() override;
 
         int getMeshDimensions(
             precice::string_view meshName) const override;
@@ -28,17 +29,17 @@ namespace MinimalCoupler
             precice::span<int> ids) override;
 
         void readData(
-            const std::string &meshName,
-            const std::string &dataName,
-            const std::vector<int> &vertexIDs,
+            precice::string_view meshName,
+            precice::string_view dataName,
+            precice::span<const precice::VertexID> vertexIDs,
             double relativeReadTime,
-            std::vector<double> &values) const override;
+            precice::span<double> values) const override;
 
         void writeData(
-            const std::string &meshName,
-            const std::string &dataName,
-            const std::vector<int> &vertexIDs,
-            const std::vector<double> &values) override;
+            precice::string_view meshName,
+            precice::string_view dataName,
+            precice::span<const precice::VertexID> vertexIDs,
+            precice::span<const double> values) override;
 
         void initialize() override;
 

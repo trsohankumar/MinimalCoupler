@@ -91,10 +91,10 @@ bool Mesh::checkIfVertexIdExists(const int vertexId) const
     return vertexId < _vertices.size();
 }
 
-void Mesh::getDataForVertexId(const std::string& dataName, const std::vector<int>& vertexId, std::vector<double>& values, double absoluteTime)
+void Mesh::getDataForVertexId(precice::string_view dataName, precice::span<const precice::VertexID> vertexId, precice::span<double> values, double absoluteTime)
 {
     // find data that was stored at time that is closest to absoluteTime
-    auto it = _dataFields.at(dataName).upper_bound(absoluteTime);
+    auto it = _dataFields.at(std::string(dataName)).upper_bound(absoluteTime);
 
     // move to last idx as this would be the closest time
     it--;

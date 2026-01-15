@@ -57,11 +57,11 @@ namespace precice
     void Participant::readData(
         precice::string_view meshName,
         precice::string_view dataName,
-        precice::span<const VertexID> ids,
+        precice::span<const precice::VertexID> ids,
         double relativeReadTime,
         precice::span<double> values) const
     {
-        // TODO: implement with span-based signature
+        _impl->readData(meshName, dataName, ids, relativeReadTime, values);
     }
 
     void Participant::writeData(
@@ -70,7 +70,7 @@ namespace precice
         precice::span<const VertexID> ids,
         precice::span<const double> values)
     {
-        // TODO: implement with span-based signature
+        _impl->writeData(meshName, dataName, ids, values);
     }
 
     void Participant::initialize()
@@ -312,4 +312,4 @@ namespace precice
         // TODO: implement
     }
 
-} // namespace precice
+} 
