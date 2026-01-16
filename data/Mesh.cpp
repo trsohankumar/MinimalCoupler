@@ -21,8 +21,15 @@ void Mesh::setMeshVertices(std::vector<Point> vertices)
    _vertices = std::move(vertices); 
 }
 
-void Mesh::addDataToMesh(const std::string& dataName, double timestamp, std::vector<double>&& inputData)
+void Mesh::addDataToMesh(
+    const std::string& dataName,
+    double timestamp,
+    std::vector<double>&& inputData)
 {
+    if (inputData.empty())
+    {
+        inputData.resize(_vertices.size() * _dimensions, 0.0);
+    }
     _dataFields[dataName][timestamp] = std::move(inputData);
 }
 

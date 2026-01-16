@@ -65,10 +65,15 @@ namespace MinimalCoupler
 
     private:
         void receiveMeshVertices() const;
+
         int getSolidConnectionSocket() const;
+
         void computeMappings();
+
         void mapWriteData();
+
         void mapReadData();
+
         int solidSocket;
         std::unordered_map<std::string, std::unique_ptr<Mesh>> _meshes;
     };

@@ -217,7 +217,7 @@ namespace MinimalCoupler
         }
         std::vector<double> dataToStore (values.data(), values.data() + values.size());
         // if all of these checks succeded then we just add the data to mesh for ts = end of current timewindow
-        double absoluteTime = getCouplingScheme().getCurrentTime() + getCouplingScheme().getMaxTimeStepSize();
+        double absoluteTime = getCouplingScheme().getCurrentTime();
         // store the data into the mesh for time window
         
         mesh->addDataToMesh(std::string(dataName), absoluteTime, std::move(dataToStore));
@@ -226,7 +226,19 @@ namespace MinimalCoupler
     void SolidParticipantImplementation::advance(
         double computedTimeStepSize)
     {
-        getCouplingScheme().advance(computedTimeStepSize);
+        double currentTime = getCouplingScheme().getCurrentTime();
+        double maxTimeStep = getCouplingScheme().getMaxTimeStepSize();
+        double nextTimeWindowEnd = currentTime + maxTimeStep;
+        
+        // add a check here to map data only if at window end
+        if (currentTime + computedTimeStepSize >= currentTime + maxTimeStep)
+        {
+            getCouplingScheme().advance( 
+                getParticipantName(),
+                _meshes.at("Solid-Mesh").get(),
+                computedTimeStepSize,
+                fluidSocket);
+        }
     }
 
     SolidParticipantImplementation::~SolidParticipantImplementation()

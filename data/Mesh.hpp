@@ -18,21 +18,44 @@ namespace MinimalCoupler
     {
     public:
         Mesh();
+
         std::string_view getMeshName() const;
-        void setMeshName(std::string meshName);
-        void setMeshVertices(std::vector<Point> vertices);
-        void setReadMapping(std::vector<Point> &&vertexMapping);
-        void setWriteMapping(std::vector<Point> &&vertexMapping);
-        void addDataToMesh(const std::string &dataName, double timestamp, std::vector<double> &&inputData = std::vector<double>());
+
+        void setMeshName(
+            std::string meshName);
+
+        void setMeshVertices(
+            std::vector<Point> vertices);
+
+        void setReadMapping(
+            std::vector<Point> &&vertexMapping);
+
+        void setWriteMapping(
+            std::vector<Point> &&vertexMapping);
+
+        void addDataToMesh(
+            const std::string &dataName,
+            double timestamp,
+            std::vector<double> &&inputData = {});
+
         int getMeshDimensions() const;
-        void setMeshDimensions(int dimensions);
+
+        void setMeshDimensions(
+            int dimensions);
+
         size_t getVertexCount() const;
+
         void allocateDataFields();
+
         const std::vector<Point> &getMeshVertices() const;
+
         const std::vector<Point> &getReadMapping() const;
+
         const std::vector<Point> &getWriteMapping() const;
 
-        std::vector<double> &getDataField(const std::string &dataName, double timestamp);
+        std::vector<double> &getDataField(
+            const std::string &dataName,
+            double timestamp);
 
         bool checkIfDataFieldExists(
             const std::string &dataName) const;
@@ -41,7 +64,7 @@ namespace MinimalCoupler
             const int vertexId) const;
 
         void getDataForVertexId(
-            precice::string_view dataName, 
+            precice::string_view dataName,
             precice::span<const precice::VertexID> vertexId, precice::span<double> values,
             double absoluteTime);
 
@@ -52,11 +75,11 @@ namespace MinimalCoupler
         std::vector<Point> _writeVertexMapping;
         int _dimensions;
         std::unordered_map<
-            std::string, 
+            std::string,
             std::map<
-                double, 
-                std::vector<double>>
-            > _dataFields;
+                double,
+                std::vector<double>>>
+            _dataFields;
         MeshType _meshType;
     };
 

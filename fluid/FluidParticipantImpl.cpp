@@ -19,7 +19,7 @@ namespace MinimalCoupler
         int solverProcessSize)
         : ParticipantImplementation(participantName, configurationFileName, solverProcessIndex, solverProcessSize), solidSocket(-1)
     {
-        
+
         // setup coupling scheme max Time an window size
         getCouplingScheme().setMaxTime(1.0);
         getCouplingScheme().setTimeWindowSize(0.1);
@@ -57,11 +57,11 @@ namespace MinimalCoupler
 
         // 3. Transfer vertices from participant sender to receiver
         receiveMeshVertices();
-        
+
         // compute mappings between meshes
         // The participant that receives the mesh MUST compute mappings in both the read and write directions
         computeMappings();
-        // 4. Map Write Data
+        // 4. Map Write Data (at time 0 for initialization)
         mapWriteData();
         // 5. Initialize the coupling scheme
         getCouplingScheme().initialize(getParticipantName(), _meshes.at("Solid-Mesh").get(), solidSocket);
@@ -71,7 +71,6 @@ namespace MinimalCoupler
 
         MINIMALCOUPLER_INFO("Initialization complete!");
     }
-
 
     int FluidParticipantImplementation::getSolidConnectionSocket() const
     {
@@ -150,7 +149,7 @@ namespace MinimalCoupler
         {
 
             ids[i / dim] = static_cast<precice::VertexID>(i / dim);
-            Point v {ids[i/dim], coordinates[i], coordinates[i + 1]};
+            Point v{ids[i / dim], coordinates[i], coordinates[i + 1]};
             vertices.emplace_back(std::move(v));
         }
 
@@ -165,13 +164,13 @@ namespace MinimalCoupler
         MINIMALCOUPLER_INFO("Computing mappings between Fluid and Solid meshes vertices");
         NearestNeighbor nnMapper;
 
-        const auto& fluidMeshVertices = _meshes.at("Fluid-Mesh")->getMeshVertices();
-        const auto& solidMeshVertices = _meshes.at("Solid-Mesh")->getMeshVertices();
+        const auto &fluidMeshVertices = _meshes.at("Fluid-Mesh")->getMeshVertices();
+        const auto &solidMeshVertices = _meshes.at("Solid-Mesh")->getMeshVertices();
 
         auto fluidToSolidMapping = nnMapper.computeNearestNeighbors(solidMeshVertices, fluidMeshVertices);
 
         MINIMALCOUPLER_FILE_INFO("Fluid to Solid Mapping (write):");
-        for(const auto &m: fluidToSolidMapping)
+        for (const auto &m : fluidToSolidMapping)
         {
             MINIMALCOUPLER_FILE_INFO("Fluid Vertex: (", fluidMeshVertices[m.id].x, ",", fluidMeshVertices[m.id].y, ") maps to Solid Vertex ", m.id, ": (", m.x, ", ", m.y, ")");
         }
@@ -180,7 +179,7 @@ namespace MinimalCoupler
         auto solidToFluidMapping = nnMapper.computeNearestNeighbors(fluidMeshVertices, solidMeshVertices);
 
         MINIMALCOUPLER_FILE_INFO("Solid to Fluid Mapping (read):");
-        for(const auto &m: solidToFluidMapping)
+        for (const auto &m : solidToFluidMapping)
         {
             MINIMALCOUPLER_FILE_INFO("Solid Vertex: (", solidMeshVertices[m.id].x, ",", solidMeshVertices[m.id].y, ") maps to Fluid Vertex ", m.id, ": (", m.x, ", ", m.y, ")");
         }
@@ -191,35 +190,51 @@ namespace MinimalCoupler
 
     void FluidParticipantImplementation::mapWriteData()
     {
+        double currentTime = getCouplingScheme().getCurrentTime();
         // Before sending force data to solid, the data is mapped from FLuid mesh to solid mesh
-        const auto& fluidForceData = _meshes.at("Fluid-Mesh")->getDataField("Force", getCouplingScheme().getCurrentTime());
+        MINIMALCOUPLER_INFO("Trying to get Force at time: ", currentTime, " for write mapping.");
+        const auto &fluidForceData = _meshes.at("Fluid-Mesh")->getDataField("Force", currentTime);
 
-        auto& solidForceData = _meshes.at("Solid-Mesh")->getDataField("Force", getCouplingScheme().getCurrentTime());
+        // since we are mapping now the timestamp will not exist on the receiving map, so we add it here
+        _meshes.at("Solid-Mesh")->addDataToMesh("Force", currentTime);
 
-        NearestNeighbor::mapConservative(_meshes.at("Fluid-Mesh")->getWriteMapping(), fluidForceData, solidForceData, _meshes.at("Fluid-Mesh")->getMeshDimensions());
+        auto &solidForceData = _meshes.at("Solid-Mesh")->getDataField("Force", currentTime);
 
-        MINIMALCOUPLER_INFO("Mapping force data from Fluid to Solid");
+        NearestNeighbor::mapConservative(
+            _meshes.at("Fluid-Mesh")->getWriteMapping(), fluidForceData,
+            solidForceData,
+            _meshes.at("Fluid-Mesh")->getMeshDimensions());
+
         MINIMALCOUPLER_FILE_INFO("Mapping force data from Fluid to Solid");
         int dim = _meshes.at("Solid-Mesh")->getMeshDimensions();
-        for (size_t i = 0; i < solidForceData.size(); i += dim) {
-            MINIMALCOUPLER_FILE_INFO("Vertex ", i/dim, ": (",  solidForceData[i], ", ", solidForceData[i+1], ")");
+        for (size_t i = 0; i < solidForceData.size(); i += dim)
+        {
+            MINIMALCOUPLER_FILE_INFO("Vertex ", i/dim, ": (", solidForceData[i], ", ", solidForceData[i+1], ")");
         }
     }
-    
+
     void FluidParticipantImplementation::mapReadData()
     {
         // After receiving displacement data from solid, disp data is mapped from Solid mesh to Fluid mesh
-        auto& fluidDispData = _meshes.at("Fluid-Mesh")->getDataField("Displacement", getCouplingScheme().getCurrentTime());
+        double currentTime = getCouplingScheme().getCurrentTime();
 
-        const auto& solidDispData = _meshes.at("Solid-Mesh")->getDataField("Displacement", getCouplingScheme().getCurrentTime());
+        // As we are just computing read mappings now the destination will not exist so we add it
+        MINIMALCOUPLER_INFO("Trying to get Displacement at time: ", currentTime, " for read mapping.");
+        _meshes.at("Fluid-Mesh")->addDataToMesh("Displacement", currentTime);
 
-        NearestNeighbor::mapConsistent(_meshes.at("Fluid-Mesh")->getReadMapping(), solidDispData, fluidDispData, _meshes.at("Fluid-Mesh")->getMeshDimensions());
+        auto &fluidDispData = _meshes.at("Fluid-Mesh")->getDataField("Displacement", currentTime);
 
-        MINIMALCOUPLER_INFO("Mapping displacement data from Solid mesh to Fluid mesh");
+        const auto &solidDispData = _meshes.at("Solid-Mesh")->getDataField("Displacement", currentTime);
+
+        NearestNeighbor::mapConsistent(
+            _meshes.at("Fluid-Mesh")->getReadMapping(), solidDispData,
+            fluidDispData,
+            _meshes.at("Fluid-Mesh")->getMeshDimensions());
+
         MINIMALCOUPLER_FILE_INFO("Mapping displacement data from Solid mesh to Fluid mesh");
         int dim = _meshes.at("Fluid-Mesh")->getMeshDimensions();
-        for (size_t i = 0; i < fluidDispData.size(); i += dim) {
-            
+        for (size_t i = 0; i < fluidDispData.size(); i += dim)
+        {
             MINIMALCOUPLER_FILE_INFO("Vertex ", i/dim, ": (", fluidDispData[i], ", ", fluidDispData[i+1], ")");
         }
     }
@@ -234,22 +249,22 @@ namespace MinimalCoupler
         // check if meshName exists
         if (!_meshes.contains(std::string(meshName)))
         {
-            throw std::runtime_error("Mesh with name " + std::string(meshName) +  " not found");
+            throw std::runtime_error("Mesh with name " + std::string(meshName) + " not found");
         }
-        auto & mesh = _meshes.at(std::string(meshName));
+        auto &mesh = _meshes.at(std::string(meshName));
         // check if data name exists
         if (!mesh->checkIfDataFieldExists(std::string(dataName)))
         {
-            throw std::runtime_error("Data field with name " + std::string(dataName) +  " not found");
+            throw std::runtime_error("Data field with name " + std::string(dataName) + " not found");
         }
         // check if all the vertex locations are actually correct
-        for (auto id: vertexIDs)
+        for (auto id : vertexIDs)
         {
             if (!mesh->checkIfVertexIdExists(id))
             {
                 throw std::runtime_error("Vertex with id " + std::to_string(id) + " does not exist");
             }
-        } 
+        }
         // check if size of value = size of vertexIds * dimensions =  size of values
         if (vertexIDs.size() * mesh->getMeshDimensions() != values.size())
         {
@@ -273,39 +288,61 @@ namespace MinimalCoupler
         // check if meshName exists
         if (!_meshes.contains(std::string(meshName)))
         {
-            throw std::runtime_error("Mesh with name " + std::string(meshName) +  " not found");
+            throw std::runtime_error("Mesh with name " + std::string(meshName) + " not found");
         }
-        auto & mesh = _meshes.at(std::string(meshName));
+        auto &mesh = _meshes.at(std::string(meshName));
         // check if data name exists
         if (!mesh->checkIfDataFieldExists(std::string(dataName)))
         {
-            throw std::runtime_error("Data field with name " + std::string(dataName) +  " not found");
+            throw std::runtime_error("Data field with name " + std::string(dataName) + " not found");
         }
         // check if all the vertex locations are actually correct
-        for (auto id: vertexIDs)
+        for (auto id : vertexIDs)
         {
             if (!mesh->checkIfVertexIdExists(id))
             {
                 throw std::runtime_error("Vertex with id " + std::to_string(id) + " does not exist");
             }
-        } 
+        }
         // check if size of value = size of vertexIds * dimensions =  size of values
         if (vertexIDs.size() * mesh->getMeshDimensions() != values.size())
         {
             throw std::runtime_error("The value error provided is not enough to store all the data values");
         }
-        std::vector<double> dataToStore (values.data(), values.data() + values.size());
+        std::vector<double> dataToStore(values.data(), values.data() + values.size());
         // if all of these checks succeded then we just add the data to mesh for ts = end of current timewindow
-        double absoluteTime = getCouplingScheme().getCurrentTime() + getCouplingScheme().getMaxTimeStepSize();
+        double writeTime = getCouplingScheme().getCurrentTime();
         // store the data into the mesh for time window
-        
-        mesh->addDataToMesh(std::string(dataName), absoluteTime, std::move(dataToStore));
+
+        mesh->addDataToMesh(std::string(dataName), writeTime, std::move(dataToStore));
     }
 
     void FluidParticipantImplementation::advance(
         double computedTimeStepSize)
     {
-        getCouplingScheme().advance(computedTimeStepSize);
+        double currentTime = getCouplingScheme().getCurrentTime();
+        double maxTimeStep = getCouplingScheme().getMaxTimeStepSize();
+        double nextTimeWindowEnd = currentTime + maxTimeStep;
+        
+        // add a check here to map data only if at window end
+        if (currentTime + computedTimeStepSize >= currentTime + maxTimeStep)
+        {
+            // map write data first
+            mapWriteData();
+
+            // exchange data
+            getCouplingScheme().advance(
+            getParticipantName(),
+            _meshes.at("Solid-Mesh").get(),
+            computedTimeStepSize,
+            solidSocket);
+
+            // Todo: Check if mapping actually mapps data in current time window
+            // map data that was received
+            // this check is added because there will be no data to map at the end
+            if (isCouplingOngoing())
+                mapReadData();
+        }
     }
 
     FluidParticipantImplementation::~FluidParticipantImplementation()
@@ -322,7 +359,7 @@ namespace MinimalCoupler
         }
     }
 
-    bool FluidParticipantImplementation::isCouplingOngoing() 
+    bool FluidParticipantImplementation::isCouplingOngoing()
     {
         return getCouplingScheme().isCouplingOnGoing();
     }
@@ -342,7 +379,7 @@ namespace MinimalCoupler
         return false;
     }
 
-    double FluidParticipantImplementation::getMaxTimeStepSize() 
+    double FluidParticipantImplementation::getMaxTimeStepSize()
     {
         return getCouplingScheme().getMaxTimeStepSize();
     }
