@@ -20,10 +20,6 @@ add_library(precice SHARED
     mapping/NearestNeighbor.cpp
     impl/ParticipantImpl.hpp
     impl/ParticipantImpl.cpp
-    fluid/FluidParticipantImpl.hpp
-    fluid/FluidParticipantImpl.cpp
-    solid/SolidParticipantImpl.hpp
-    solid/SolidParticipantImpl.cpp
 )
 
 set_target_properties(precice PROPERTIES

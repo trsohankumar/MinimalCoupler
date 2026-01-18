@@ -1,8 +1,7 @@
-#include "Participant.hpp"
-#include "fluid/FluidParticipantImpl.hpp"
-#include "solid/SolidParticipantImpl.hpp"
-
 #include <stdexcept>
+
+#include "Participant.hpp"
+
 namespace precice
 {
 
@@ -12,18 +11,9 @@ namespace precice
         int solverProcessIndex,
         int solverProcessSize)
     {
-        if (participantName == "Fluid")
+        if (participantName == "Solid" || participantName == "Fluid")
         {
-            _impl = std::make_unique<MinimalCoupler::FluidParticipantImplementation>(
-                std::move(participantName),
-                std::move(configurationFileName),
-                solverProcessIndex,
-                solverProcessSize);
-        }
-        else if (participantName == "Solid")
-        {
-
-            _impl = std::make_unique<MinimalCoupler::SolidParticipantImplementation>(
+            _impl = std::make_unique<MinimalCoupler::ParticipantImplementation>(
                 std::move(participantName),
                 std::move(configurationFileName),
                 solverProcessIndex,
@@ -133,27 +123,7 @@ namespace precice
         int solverProcessSize,
         void *communicator)
     {
-        // For now, ignore the communicator and delegate to the basic constructor
-        if (participantName == "Fluid")
-        {
-            _impl = std::make_unique<MinimalCoupler::FluidParticipantImplementation>(
-                std::move(participantName),
-                std::move(configurationFileName),
-                solverProcessIndex,
-                solverProcessSize);
-        }
-        else if (participantName == "Solid")
-        {
-            _impl = std::make_unique<MinimalCoupler::SolidParticipantImplementation>(
-                std::move(participantName),
-                std::move(configurationFileName),
-                solverProcessIndex,
-                solverProcessSize);
-        }
-        else
-        {
-            throw std::invalid_argument("Unknown participant name:" + std::string(participantName));
-        }
+        throw std::runtime_error("MPI communicator constructor not implemented");
     }
 
     // Status query methods

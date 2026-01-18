@@ -6,11 +6,6 @@
 #include "impl/ParticipantImpl.hpp"
 #include "precice/types.hpp"
 
-namespace MinimalCoupler
-{
-  class FluidParticipantImplementation;
-  class SolidParticipantImplementation;
-}
 
 namespace precice
 {

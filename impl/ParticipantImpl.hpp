@@ -1,7 +1,11 @@
 #pragma once
 
-#include<string>
-#include<vector>
+#include <string>
+#include <vector>
+#include <memory>
+#include <unordered_map>
+
+#include "data/Mesh.hpp"
 #include "precice/types.hpp"
 #include "couplingscheme/coupling.hpp"
 
@@ -18,69 +22,83 @@ public:
         int solverProcessIndex,
         int solverProcessSize);
 
-    virtual ~ParticipantImplementation() = default;
+    ~ParticipantImplementation();
 
     // Mesh methods
-    virtual int getMeshDimensions(
-        precice::string_view meshName) const = 0;
+    int getMeshDimensions(
+        precice::string_view meshName) const;
 
-    virtual void setMeshVertices(
+    void setMeshVertices(
         precice::string_view meshName,
         precice::span<const double> coordinates,
-        precice::span<int> ids) = 0;
+        precice::span<int> ids);
 
     // Data exchange methods
-    virtual void readData(
+    void readData(
         precice::string_view meshName,
         precice::string_view dataName,
         precice::span<const precice::VertexID> vertexIDs,
         double relativeReadTime,
-        precice::span<double> values) const = 0;
+        precice::span<double> values) const;
 
-    virtual void writeData(
+    void writeData(
         precice::string_view meshName,
         precice::string_view dataName,
         precice::span<const precice::VertexID> vertexIDs,
-        precice::span<const double> values) = 0;
+        precice::span<const double> values);
 
     // Steering methods
-    virtual void initialize() = 0;
+    void initialize();
 
-    virtual void advance(
-        double computedTimeStepSize) = 0;
+    void advance(
+        double computedTimeStepSize);
 
-    virtual void finalize() = 0;
+    void finalize();
 
     // Status queries
-    virtual bool isCouplingOngoing() = 0;
-    virtual bool requiresInitialData() const = 0;
-    virtual bool requiresWritingCheckpoint() const = 0;
-    virtual bool requiresReadingCheckpoint() const = 0;
+    bool isCouplingOngoing();
+    bool requiresInitialData() const;
+    bool requiresWritingCheckpoint() const;
+    bool requiresReadingCheckpoint() const;
 
-    virtual bool isTimeWindowComplete()  = 0;
-    virtual double getMaxTimeStepSize() = 0;
+    bool isTimeWindowComplete();
+    double getMaxTimeStepSize();
 
     // Profiling
-    virtual void startProfilingSection(
-        const std::string& name) = 0;
+    void startProfilingSection(
+        const std::string& name);
 
-    virtual void stopLastProfilingSection() = 0;
-
-protected:
-    const std::string& getParticipantName() const;
-    const std::string& getRemoteParticipantName() const;
-    const std::string& getConfigFileName() const;
-    int getRank() const;
-    int getSize() const;
-    CouplingScheme& getCouplingScheme() const;
+    void stopLastProfilingSection();
 
 private:
-    std::string _participantName;
-    std::string _remoteParticipantName;
-    std::string _configFileName;
-    mutable CouplingScheme couplingScheme;
-    int _rank;
-    int _size;
+
+    void constructFluidParticipantMeshes();
+    void constructSolidParticipantMeshes();
+
+
+    int getSolidConnectionSocket() const;
+    int getFluidConnectionSocket() const;
+    
+    void sendMeshVertices() const;
+    void receiveMeshVertices() const;
+    void computeMappings();
+    void mapWriteData();
+    void mapReadData();
+    std::string     _participantName;
+    std::string     _remoteParticipantName;
+    std::string     _configFileName;
+    CouplingScheme  _couplingScheme;
+    std::string     _participantMeshName;
+    std::string     _remoteParticipantMeshName;
+    std::string     _participantDataName;
+    std::string     _remoteParticipantDataName;
+    int             _rank;
+    int             _size;
+    int             _remoteSocket;
+    std::unordered_map<
+        std::string, 
+        std::unique_ptr<
+        Mesh>>      _meshes;
 
 };
 }
