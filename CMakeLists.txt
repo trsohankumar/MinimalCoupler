@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.28)
-project(precice)
+project(minimalCoupler)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_library(precice SHARED
+add_library(minimalCoupler SHARED
     precice/precice.hpp
     precice/precice.cpp
     precice/types.hpp
@@ -22,11 +22,11 @@ add_library(precice SHARED
     impl/ParticipantImpl.cpp
 )
 
-set_target_properties(precice PROPERTIES
+set_target_properties(minimalCoupler PROPERTIES
     SOVERSION 3
 )
 
-target_include_directories(precice
+target_include_directories(minimalCoupler
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
