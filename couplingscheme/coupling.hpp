@@ -4,34 +4,27 @@
 
 namespace MinimalCoupler
 {
-    class CouplingScheme
-    {
-    public:
-        CouplingScheme();
-        double getMaxTime() const;
-        double getTimeWinowSize() const;
-        double getCurrentTime() const;
-        void setMaxTime(double maxTime);
-        void setTimeWindowSize(double timeWindowSize);
+class CouplingScheme
+{
+  public:
+    CouplingScheme();
+    double getMaxTime() const;
+    double getTimeWinowSize() const;
+    double getCurrentTime() const;
+    void setMaxTime(double maxTime);
+    void setTimeWindowSize(double timeWindowSize);
 
-        void initialize(
-            precice::string_view participantName,
-            Mesh* mesh,
-            int remoteSocket) const;
-        
-        void advance(
-            precice::string_view participantName, 
-            Mesh* mesh, 
-            double computedTimeStepSize,
-            int remoteSocket);
+    void initialize(precice::string_view participantName, Mesh *mesh, int remoteSocket) const;
 
-        bool isCouplingOnGoing() const;
-        double getMaxTimeStepSize() const;
-        bool isTimeWindowComplete() const;
+    void advance(precice::string_view participantName, Mesh *mesh, double computedTimeStepSize, int remoteSocket);
 
-    private:
-        double _maxTime;
-        double _timeWindowSize;
-        int _currentTimeWindowNumber;
-    };
-}
+    bool isCouplingOnGoing() const;
+    double getMaxTimeStepSize() const;
+    bool isTimeWindowComplete() const;
+
+  private:
+    double _maxTime;
+    double _timeWindowSize;
+    int _currentTimeWindowNumber;
+};
+} // namespace MinimalCoupler

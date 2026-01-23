@@ -1,32 +1,35 @@
 #pragma once
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
 
-namespace MinimalCoupler {
+namespace MinimalCoupler
+{
 
-enum class LogLevel {
+enum class LogLevel
+{
     DEBUG = 0,
     INFO = 1,
     WARNING = 2,
     ERROR = 3
 };
 
-class Logger {
-public:
-    static Logger& getInstance();
+class Logger
+{
+  public:
+    static Logger &getInstance();
 
-    Logger(const Logger&) = delete;
-    Logger& operator=(const Logger&) = delete;
+    Logger(const Logger &) = delete;
+    Logger &operator=(const Logger &) = delete;
 
     void setLogLevel(LogLevel level);
 
-    void setLogFile(const std::string& filename);
+    void setLogFile(const std::string &filename);
 
-    template<typename... Args>
-    void console(LogLevel level, Args&&... args) const {
+    template <typename... Args> void console(LogLevel level, Args &&...args) const
+    {
         if (level < minLevel_)
             return;
 
@@ -44,8 +47,8 @@ public:
         }
     }
 
-    template<typename... Args>
-    void file(LogLevel level, Args&&... args) {
+    template <typename... Args> void file(LogLevel level, Args &&...args)
+    {
         if (!logFile_.is_open() || level < minLevel_)
             return;
 
@@ -57,9 +60,9 @@ public:
         logFile_.flush();
     }
 
-private:
+  private:
     Logger();
-    
+
     ~Logger();
 
     std::string levelStr(LogLevel level) const;
@@ -68,28 +71,28 @@ private:
     std::ofstream logFile_;
 };
 
-#define MINIMALCOUPLER_DEBUG(...) \
+#define MINIMALCOUPLER_DEBUG(...)                                                                                      \
     MinimalCoupler::Logger::getInstance().console(MinimalCoupler::LogLevel::DEBUG, __VA_ARGS__)
 
-#define MINIMALCOUPLER_INFO(...) \
+#define MINIMALCOUPLER_INFO(...)                                                                                       \
     MinimalCoupler::Logger::getInstance().console(MinimalCoupler::LogLevel::INFO, __VA_ARGS__)
 
-#define MINIMALCOUPLER_WARNING(...) \
+#define MINIMALCOUPLER_WARNING(...)                                                                                    \
     MinimalCoupler::Logger::getInstance().console(MinimalCoupler::LogLevel::WARNING, __VA_ARGS__)
 
-#define MINIMALCOUPLER_ERROR(...) \
+#define MINIMALCOUPLER_ERROR(...)                                                                                      \
     MinimalCoupler::Logger::getInstance().console(MinimalCoupler::LogLevel::ERROR, __VA_ARGS__)
 
-#define MINIMALCOUPLER_FILE_DEBUG(...) \
+#define MINIMALCOUPLER_FILE_DEBUG(...)                                                                                 \
     MinimalCoupler::Logger::getInstance().file(MinimalCoupler::LogLevel::DEBUG, __VA_ARGS__)
 
-#define MINIMALCOUPLER_FILE_INFO(...) \
+#define MINIMALCOUPLER_FILE_INFO(...)                                                                                  \
     MinimalCoupler::Logger::getInstance().file(MinimalCoupler::LogLevel::INFO, __VA_ARGS__)
 
-#define MINIMALCOUPLER_FILE_WARNING(...) \
+#define MINIMALCOUPLER_FILE_WARNING(...)                                                                               \
     MinimalCoupler::Logger::getInstance().file(MinimalCoupler::LogLevel::WARNING, __VA_ARGS__)
 
-#define MINIMALCOUPLER_FILE_ERROR(...) \
+#define MINIMALCOUPLER_FILE_ERROR(...)                                                                                 \
     MinimalCoupler::Logger::getInstance().file(MinimalCoupler::LogLevel::ERROR, __VA_ARGS__)
 
-}
+} // namespace MinimalCoupler

@@ -1,13 +1,11 @@
 #include "NearestNeighbor.hpp"
 #include <algorithm>
-#include <limits>
 #include <cmath>
+#include <limits>
 
 namespace MinimalCoupler
 {
-std::unique_ptr<KDNode> NearestNeighbor::buildKDTree(
-    const std::vector<Point>& points,
-    int axis)
+std::unique_ptr<KDNode> NearestNeighbor::buildKDTree(const std::vector<Point> &points, int axis)
 {
     if (points.empty())
         return nullptr;
@@ -17,34 +15,33 @@ std::unique_ptr<KDNode> NearestNeighbor::buildKDTree(
     std::vector<Point> mutablePoints = points;
 
     // Perform the minimum amt of sorting so that the nth element is in the correct positon
-    std::nth_element(mutablePoints.begin(), mutablePoints.begin() + mutablePoints.size() /2, mutablePoints.end(), [&axis](const Point& lhs, const Point&rhs){
-        if (axis == 0)
-            return lhs.x < rhs.x;
-        else
-            return lhs.y < rhs.y;
-    });
+    std::nth_element(mutablePoints.begin(), mutablePoints.begin() + mutablePoints.size() / 2, mutablePoints.end(),
+                     [&axis](const Point &lhs, const Point &rhs) {
+                         if (axis == 0)
+                             return lhs.x < rhs.x;
+                         else
+                             return lhs.y < rhs.y;
+                     });
 
     size_t id = mutablePoints.size() / 2;
     root->point = mutablePoints[id];
     root->axis = axis;
-    root->left = buildKDTree(std::vector<Point>(mutablePoints.begin(), mutablePoints.begin() + mutablePoints.size() / 2), axis == 0 ? 1 : 0);
-    root->right = buildKDTree(std::vector<Point>(mutablePoints.begin() + mutablePoints.size() / 2 + 1, mutablePoints.end()), axis == 0 ? 1 : 0);
+    root->left = buildKDTree(
+        std::vector<Point>(mutablePoints.begin(), mutablePoints.begin() + mutablePoints.size() / 2), axis == 0 ? 1 : 0);
+    root->right =
+        buildKDTree(std::vector<Point>(mutablePoints.begin() + mutablePoints.size() / 2 + 1, mutablePoints.end()),
+                    axis == 0 ? 1 : 0);
 
     return root;
 }
 
-double NearestNeighbor::euclideanDistance(
-    const Point& p1,
-    const Point& p2) const
+double NearestNeighbor::euclideanDistance(const Point &p1, const Point &p2) const
 {
     return std::sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
 }
 
-void NearestNeighbor::findNearestNeighbor(
-    const Point& queryPoint,
-    const KDNode* node,
-    Point& bestPoint,
-    double& bestDist) const
+void NearestNeighbor::findNearestNeighbor(const Point &queryPoint, const KDNode *node, Point &bestPoint,
+                                          double &bestDist) const
 {
     if (!node)
         return;
@@ -58,8 +55,8 @@ void NearestNeighbor::findNearestNeighbor(
     }
 
     int axis = node->axis;
-    KDNode* nextNode = nullptr;
-    KDNode* otherNode = nullptr;
+    KDNode *nextNode = nullptr;
+    KDNode *otherNode = nullptr;
     if ((axis == 0 && queryPoint.x < node->point.x) || (axis == 1 && queryPoint.y < node->point.y))
     {
         nextNode = node->left.get();
@@ -78,11 +75,11 @@ void NearestNeighbor::findNearestNeighbor(
     }
 }
 
-std::vector<Point> NearestNeighbor::computeNearestNeighbors(
-    const std::vector<Point>& sourcePoints,
-    const std::vector<Point>& queryPoints)
+std::vector<Point> NearestNeighbor::computeNearestNeighbors(const std::vector<Point> &sourcePoints,
+                                                            const std::vector<Point> &queryPoints)
 {
-    // Function constructs a kd tree from source points. It then finds the NN from source points for all the points in queryPoints
+    // Function constructs a kd tree from source points. It then finds the NN from source points for all the points in
+    // queryPoints
     _root = buildKDTree(sourcePoints, 0);
     std::vector<Point> nearestNeighbors(queryPoints.size());
 
@@ -96,11 +93,8 @@ std::vector<Point> NearestNeighbor::computeNearestNeighbors(
     return nearestNeighbors;
 }
 
-void NearestNeighbor::mapConsistent(
-    const std::vector<Point>& mapping,
-    const std::vector<double>& sourceData,
-    std::vector<double>& targetData,
-    int dimensions)
+void NearestNeighbor::mapConsistent(const std::vector<Point> &mapping, const std::vector<double> &sourceData,
+                                    std::vector<double> &targetData, int dimensions)
 {
     // Implements consitent mapping from source Data to Target Data
     targetData.resize(mapping.size() * dimensions);
@@ -115,11 +109,8 @@ void NearestNeighbor::mapConsistent(
     }
 }
 
-void NearestNeighbor::mapConservative(
-    const std::vector<Point>& mapping,
-    const std::vector<double>& sourceData,
-    std::vector<double>& targetData,
-    int dimensions)
+void NearestNeighbor::mapConservative(const std::vector<Point> &mapping, const std::vector<double> &sourceData,
+                                      std::vector<double> &targetData, int dimensions)
 {
     // Implements conservative mapping from source Data to Target Data
     std::fill(targetData.begin(), targetData.end(), 0.0);
@@ -133,4 +124,4 @@ void NearestNeighbor::mapConservative(
         }
     }
 }
-}
+} // namespace MinimalCoupler

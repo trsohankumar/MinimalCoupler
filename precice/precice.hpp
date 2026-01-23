@@ -3,7 +3,8 @@
 #include "../participant/Participant.hpp"
 #include <string>
 
-namespace precice {
+namespace precice
+{
 
 std::string getVersionInformation();
 

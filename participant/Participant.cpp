@@ -1,285 +1,218 @@
-#include <stdexcept>
-
 #include "Participant.hpp"
+
+#include <stdexcept>
 
 namespace precice
 {
 
-    Participant::Participant(
-        precice::string_view participantName,
-        precice::string_view configurationFileName,
-        int solverProcessIndex,
-        int solverProcessSize)
+Participant::Participant(precice::string_view participantName, precice::string_view configurationFileName,
+                         int solverProcessIndex, int solverProcessSize)
+{
+    if (participantName == "Solid" || participantName == "Fluid")
     {
-        if (participantName == "Solid" || participantName == "Fluid")
-        {
-            _impl = std::make_unique<MinimalCoupler::ParticipantImplementation>(
-                std::move(participantName),
-                std::move(configurationFileName),
-                solverProcessIndex,
-                solverProcessSize);
-        }
-        else
-        {
-            throw std::invalid_argument("Unknown participant name:" + std::string(participantName));
-        }
+        _impl = std::make_unique<MinimalCoupler::ParticipantImplementation>(
+            std::move(participantName), std::move(configurationFileName), solverProcessIndex, solverProcessSize);
     }
-
-    Participant::~Participant()
+    else
     {
-
+        throw std::invalid_argument("Unknown participant name:" + std::string(participantName));
     }
+}
 
-    int Participant::getMeshDimensions(
-        precice::string_view meshName) const
-    {
-        return _impl->getMeshDimensions(meshName);
-    }
+Participant::~Participant()
+{
+}
 
-    void Participant::setMeshVertices(
-        precice::string_view meshName,
-        precice::span<const double> coordinates,
-        precice::span<VertexID> ids)
-    {
-        _impl->setMeshVertices(meshName, coordinates, ids);
-    }
+int Participant::getMeshDimensions(precice::string_view meshName) const
+{
+    return _impl->getMeshDimensions(meshName);
+}
 
-    void Participant::readData(
-        precice::string_view meshName,
-        precice::string_view dataName,
-        precice::span<const precice::VertexID> ids,
-        double relativeReadTime,
-        precice::span<double> values) const
-    {
-        _impl->readData(meshName, dataName, ids, relativeReadTime, values);
-    }
+void Participant::setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates,
+                                  precice::span<VertexID> ids)
+{
+    _impl->setMeshVertices(meshName, coordinates, ids);
+}
 
-    void Participant::writeData(
-        precice::string_view meshName,
-        precice::string_view dataName,
-        precice::span<const VertexID> ids,
-        precice::span<const double> values)
-    {
-        _impl->writeData(meshName, dataName, ids, values);
-    }
+void Participant::readData(precice::string_view meshName, precice::string_view dataName,
+                           precice::span<const precice::VertexID> ids, double relativeReadTime,
+                           precice::span<double> values) const
+{
+    _impl->readData(meshName, dataName, ids, relativeReadTime, values);
+}
 
-    void Participant::initialize()
-    {
-        _impl->initialize();
-    }
+void Participant::writeData(precice::string_view meshName, precice::string_view dataName,
+                            precice::span<const VertexID> ids, precice::span<const double> values)
+{
+    _impl->writeData(meshName, dataName, ids, values);
+}
 
-    void Participant::advance(
-        double computedTimeStepSize)
-    {
-        _impl->advance(computedTimeStepSize);
-    }
+void Participant::initialize()
+{
+    _impl->initialize();
+}
 
-    void Participant::finalize()
-    {
-        _impl->finalize();
-    }
+void Participant::advance(double computedTimeStepSize)
+{
+    _impl->advance(computedTimeStepSize);
+}
 
-    bool Participant::isCouplingOngoing() const
-    {
-        return _impl->isCouplingOngoing();
-    }
+void Participant::finalize()
+{
+    _impl->finalize();
+}
 
-    bool Participant::requiresInitialData()
-    {
-        return _impl->requiresInitialData();
-    }
+bool Participant::isCouplingOngoing() const
+{
+    return _impl->isCouplingOngoing();
+}
 
-    bool Participant::requiresWritingCheckpoint()
-    {
-        return _impl->requiresWritingCheckpoint();
-    }
+bool Participant::requiresInitialData()
+{
+    return _impl->requiresInitialData();
+}
 
-    bool Participant::requiresReadingCheckpoint()
-    {
-        return _impl->requiresReadingCheckpoint();
-    }
+bool Participant::requiresWritingCheckpoint()
+{
+    return _impl->requiresWritingCheckpoint();
+}
 
-    double Participant::getMaxTimeStepSize() const
-    {
-        return _impl->getMaxTimeStepSize();
-    }
+bool Participant::requiresReadingCheckpoint()
+{
+    return _impl->requiresReadingCheckpoint();
+}
 
-    void Participant::startProfilingSection(
-        precice::string_view name)
-    {
-        // TODO: implement
-    }
+double Participant::getMaxTimeStepSize() const
+{
+    return _impl->getMaxTimeStepSize();
+}
 
-    void Participant::stopLastProfilingSection()
-    {
-        // TODO: implement
-    }
+void Participant::startProfilingSection(precice::string_view name)
+{
+    // TODO: implement
+}
 
-    // Constructor with MPI communicator
-    Participant::Participant(
-        precice::string_view participantName,
-        precice::string_view configurationFileName,
-        int solverProcessIndex,
-        int solverProcessSize,
-        void *communicator)
-    {
-        throw std::runtime_error("MPI communicator constructor not implemented");
-    }
+void Participant::stopLastProfilingSection()
+{
+    // TODO: implement
+}
 
-    // Status query methods
-    int Participant::getDataDimensions(
-        precice::string_view meshName,
-        precice::string_view dataName) const
-    {
-        return 2; // TODO: implement properly
-    }
+// Constructor with MPI communicator
+Participant::Participant(precice::string_view participantName, precice::string_view configurationFileName,
+                         int solverProcessIndex, int solverProcessSize, void *communicator)
+{
+    throw std::runtime_error("MPI communicator constructor not implemented");
+}
 
-    bool Participant::isTimeWindowComplete() const
-    {
-        return _impl->isTimeWindowComplete();
-    }
+// Status query methods
+int Participant::getDataDimensions(precice::string_view meshName, precice::string_view dataName) const
+{
+    return 2; // TODO: implement properly
+}
 
-    // Mesh topology methods
-    bool Participant::requiresMeshConnectivityFor(
-        precice::string_view meshName) const
-    {
-        return false; // TODO: implement properly
-    }
+bool Participant::isTimeWindowComplete() const
+{
+    return _impl->isTimeWindowComplete();
+}
 
-    void Participant::resetMesh(
-        precice::string_view meshName)
-    {
-        // TODO: implement
-    }
+// Mesh topology methods
+bool Participant::requiresMeshConnectivityFor(precice::string_view meshName) const
+{
+    return false; // TODO: implement properly
+}
 
-    VertexID Participant::setMeshVertex(
-        precice::string_view meshName,
-        precice::span<const double> position)
-    {
-        return 0; // TODO: implement properly
-    }
+void Participant::resetMesh(precice::string_view meshName)
+{
+    // TODO: implement
+}
 
-    int Participant::getMeshVertexSize(
-        precice::string_view meshName) const
-    {
-        return 0; // TODO: implement properly
-    }
+VertexID Participant::setMeshVertex(precice::string_view meshName, precice::span<const double> position)
+{
+    return 0; // TODO: implement properly
+}
 
-    void Participant::setMeshEdge(
-        precice::string_view meshName,
-        VertexID first,
-        VertexID second)
-    {
-        // TODO: implement
-    }
+int Participant::getMeshVertexSize(precice::string_view meshName) const
+{
+    return 0; // TODO: implement properly
+}
 
-    void Participant::setMeshEdges(
-        precice::string_view meshName,
-        precice::span<const VertexID> ids)
-    {
-        // TODO: implement
-    }
+void Participant::setMeshEdge(precice::string_view meshName, VertexID first, VertexID second)
+{
+    // TODO: implement
+}
 
-    void Participant::setMeshTriangle(
-        precice::string_view meshName,
-        VertexID first,
-        VertexID second,
-        VertexID third)
-    {
-        // TODO: implement
-    }
+void Participant::setMeshEdges(precice::string_view meshName, precice::span<const VertexID> ids)
+{
+    // TODO: implement
+}
 
-    void Participant::setMeshTriangles(
-        precice::string_view meshName,
-        precice::span<const VertexID> ids)
-    {
-        // TODO: implement
-    }
+void Participant::setMeshTriangle(precice::string_view meshName, VertexID first, VertexID second, VertexID third)
+{
+    // TODO: implement
+}
 
-    void Participant::setMeshQuad(
-        precice::string_view meshName,
-        VertexID first,
-        VertexID second,
-        VertexID third,
-        VertexID fourth)
-    {
-        // TODO: implement
-    }
+void Participant::setMeshTriangles(precice::string_view meshName, precice::span<const VertexID> ids)
+{
+    // TODO: implement
+}
 
-    void Participant::setMeshQuads(
-        precice::string_view meshName,
-        precice::span<const VertexID> ids)
-    {
-        // TODO: implement
-    }
+void Participant::setMeshQuad(precice::string_view meshName, VertexID first, VertexID second, VertexID third,
+                              VertexID fourth)
+{
+    // TODO: implement
+}
 
-    void Participant::setMeshTetrahedron(
-        precice::string_view meshName,
-        VertexID first,
-        VertexID second,
-        VertexID third,
-        VertexID fourth)
-    {
-        // TODO: implement
-    }
+void Participant::setMeshQuads(precice::string_view meshName, precice::span<const VertexID> ids)
+{
+    // TODO: implement
+}
 
-    void Participant::setMeshTetrahedra(
-        precice::string_view meshName,
-        precice::span<const VertexID> ids)
-    {
-        // TODO: implement
-    }
+void Participant::setMeshTetrahedron(precice::string_view meshName, VertexID first, VertexID second, VertexID third,
+                                     VertexID fourth)
+{
+    // TODO: implement
+}
 
-    // Advanced data methods
-    bool Participant::requiresGradientDataFor(
-        precice::string_view meshName,
-        precice::string_view dataName) const
-    {
-        return false; // TODO: implement properly
-    }
+void Participant::setMeshTetrahedra(precice::string_view meshName, precice::span<const VertexID> ids)
+{
+    // TODO: implement
+}
 
-    void Participant::writeGradientData(
-        precice::string_view meshName,
-        precice::string_view dataName,
-        precice::span<const VertexID> ids,
-        precice::span<const double> gradients)
-    {
-        // TODO: implement
-    }
+// Advanced data methods
+bool Participant::requiresGradientDataFor(precice::string_view meshName, precice::string_view dataName) const
+{
+    return false; // TODO: implement properly
+}
 
-    void Participant::mapAndReadData(
-        precice::string_view fromMeshName,
-        precice::string_view dataName,
-        precice::span<const double> positions,
-        double relativeReadTime,
-        precice::span<double> values) const
-    {
-        // TODO: implement
-    }
+void Participant::writeGradientData(precice::string_view meshName, precice::string_view dataName,
+                                    precice::span<const VertexID> ids, precice::span<const double> gradients)
+{
+    // TODO: implement
+}
 
-    void Participant::writeAndMapData(
-        precice::string_view meshName,
-        precice::string_view dataName,
-        precice::span<const double> positions,
-        precice::span<const double> values)
-    {
-        // TODO: implement
-    }
+void Participant::mapAndReadData(precice::string_view fromMeshName, precice::string_view dataName,
+                                 precice::span<const double> positions, double relativeReadTime,
+                                 precice::span<double> values) const
+{
+    // TODO: implement
+}
 
-    // Direct access methods
-    void Participant::setMeshAccessRegion(
-        precice::string_view meshName,
-        precice::span<const double> boundingBox) const
-    {
-        // TODO: implement
-    }
+void Participant::writeAndMapData(precice::string_view meshName, precice::string_view dataName,
+                                  precice::span<const double> positions, precice::span<const double> values)
+{
+    // TODO: implement
+}
 
-    void Participant::getMeshVertexIDsAndCoordinates(
-        precice::string_view meshName,
-        precice::span<VertexID> ids,
-        precice::span<double> coordinates) const
-    {
-        // TODO: implement
-    }
+// Direct access methods
+void Participant::setMeshAccessRegion(precice::string_view meshName, precice::span<const double> boundingBox) const
+{
+    // TODO: implement
+}
 
-} 
+void Participant::getMeshVertexIDsAndCoordinates(precice::string_view meshName, precice::span<VertexID> ids,
+                                                 precice::span<double> coordinates) const
+{
+    // TODO: implement
+}
+
+} // namespace precice
