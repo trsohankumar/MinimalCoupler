@@ -38,4 +38,4 @@ make
 
 ### Build Output
 The buld process generates:
-- `libprecice.so.3` - The shared library
+- `libminimalCoupler.so.3` - The shared library
