@@ -1,7 +1,8 @@
-#include "NearestNeighbor.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
+
+#include "NearestNeighbor.hpp"
 
 namespace MinimalCoupler
 {

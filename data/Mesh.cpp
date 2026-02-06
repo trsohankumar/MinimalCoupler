@@ -21,13 +21,13 @@ void Mesh::setMeshVertices(std::vector<Point> vertices)
     _vertices = std::move(vertices);
 }
 
-void Mesh::addDataToMesh(const std::string &dataName, double timestamp, std::vector<double> &&inputData)
+void Mesh::addDataToMesh(const std::string &dataName, int timeWindow, std::vector<double> &&inputData)
 {
     if (inputData.empty())
     {
         inputData.resize(_vertices.size() * _dimensions, 0.0);
     }
-    _dataFields[dataName][timestamp] = std::move(inputData);
+    _dataFields[dataName][timeWindow] = std::move(inputData);
 }
 
 int Mesh::getMeshDimensions() const
@@ -48,9 +48,9 @@ size_t Mesh::getVertexCount() const
 void Mesh::allocateDataFields()
 {
     size_t dataSize = _vertices.size() * _dimensions;
-    for (auto &[name, timestampMap] : _dataFields)
+    for (auto &[name, windowMap] : _dataFields)
     {
-        for (auto &[timestamp, data] : timestampMap)
+        for (auto &[window, data] : windowMap)
         {
             data.resize(dataSize, 0.0);
         }
@@ -82,14 +82,36 @@ const std::vector<Point> &Mesh::getWriteMapping() const
     return _writeVertexMapping;
 }
 
-std::vector<double> &Mesh::getDataField(const std::string &dataName, double timestamp)
+std::vector<double> &Mesh::getDataField(const std::string &dataName, int timeWindow)
 {
-    return _dataFields.at(dataName).at(timestamp);
+    return _dataFields.at(dataName).at(timeWindow);
 }
 
 bool Mesh::checkIfDataFieldExists(const std::string &dataName) const
 {
     return _dataFields.contains(dataName);
+}
+
+bool Mesh::checkIfTimeWindowExists(const std::string &dataName, int timeWindow) const
+{
+    if (!_dataFields.contains(dataName))
+    {
+        return false;
+    }
+    return _dataFields.at(dataName).contains(timeWindow);
+}
+
+std::vector<int> Mesh::getAvailableTimeWindows(const std::string &dataName) const
+{
+    std::vector<int> windows;
+    if (_dataFields.contains(dataName))
+    {
+        for (const auto &[w, data] : _dataFields.at(dataName))
+        {
+            windows.push_back(w);
+        }
+    }
+    return windows;
 }
 
 bool Mesh::checkIfVertexIdExists(const int vertexId) const
@@ -98,16 +120,9 @@ bool Mesh::checkIfVertexIdExists(const int vertexId) const
 }
 
 void Mesh::getDataForVertexId(precice::string_view dataName, precice::span<const precice::VertexID> vertexId,
-                              precice::span<double> values, double absoluteTime)
+                              precice::span<double> values, int timeWindow)
 {
-    // find data that was stored at time that is closest to absoluteTime
-    auto it = _dataFields.at(std::string(dataName)).upper_bound(absoluteTime);
-
-    // move to last idx as this would be the closest time
-    it--;
-
-    // get the data vector at the closest timestamp
-    const std::vector<double> &dataVector = it->second;
+    const std::vector<double> &dataVector = _dataFields.at(std::string(dataName)).at(timeWindow);
 
     // store the data for each vertexId in the values array
     size_t outputIdx = 0;

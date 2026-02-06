@@ -29,7 +29,7 @@ class Mesh
 
     void setWriteMapping(std::vector<Point> &&vertexMapping);
 
-    void addDataToMesh(const std::string &dataName, double timestamp, std::vector<double> &&inputData = {});
+    void addDataToMesh(const std::string &dataName, int timeWindow, std::vector<double> &&inputData = {});
 
     int getMeshDimensions() const;
 
@@ -45,14 +45,18 @@ class Mesh
 
     const std::vector<Point> &getWriteMapping() const;
 
-    std::vector<double> &getDataField(const std::string &dataName, double timestamp);
+    std::vector<double> &getDataField(const std::string &dataName, int timeWindow);
 
     bool checkIfDataFieldExists(const std::string &dataName) const;
+
+    bool checkIfTimeWindowExists(const std::string &dataName, int timeWindow) const;
+
+    std::vector<int> getAvailableTimeWindows(const std::string &dataName) const;
 
     bool checkIfVertexIdExists(const int vertexId) const;
 
     void getDataForVertexId(precice::string_view dataName, precice::span<const precice::VertexID> vertexId,
-                            precice::span<double> values, double absoluteTime);
+                            precice::span<double> values, int timeWindow);
 
   private:
     std::string _meshName;
@@ -60,7 +64,7 @@ class Mesh
     std::vector<Point> _readVertexMapping;
     std::vector<Point> _writeVertexMapping;
     int _dimensions;
-    std::unordered_map<std::string, std::map<double, std::vector<double>>> _dataFields;
+    std::unordered_map<std::string, std::map<int, std::vector<double>>> _dataFields;
     MeshType _meshType;
 };
 

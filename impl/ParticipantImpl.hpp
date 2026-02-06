@@ -44,8 +44,8 @@ class ParticipantImplementation
     // Status queries
     bool isCouplingOngoing();
     bool requiresInitialData() const;
-    bool requiresWritingCheckpoint() const;
-    bool requiresReadingCheckpoint() const;
+    bool requiresWritingCheckpoint();
+    bool requiresReadingCheckpoint();
 
     bool isTimeWindowComplete();
     double getMaxTimeStepSize();
@@ -66,7 +66,7 @@ class ParticipantImplementation
     void receiveMeshVertices() const;
     void computeMappings();
     void mapWriteData();
-    void mapReadData();
+    void mapReadData(int sourceWindow);
     std::string _participantName;
     std::string _remoteParticipantName;
     std::string _configFileName;

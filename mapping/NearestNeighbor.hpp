@@ -1,7 +1,8 @@
 #pragma once
-#include "../data/Point.hpp"
 #include <memory>
 #include <vector>
+
+#include "../data/Point.hpp"
 
 namespace MinimalCoupler
 {

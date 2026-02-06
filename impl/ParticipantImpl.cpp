@@ -26,9 +26,10 @@ ParticipantImplementation::ParticipantImplementation(precice::string_view partic
     MINIMALCOUPLER_INFO("I am participant ", _participantName);
     MINIMALCOUPLER_INFO("My remote participant is ", _remoteParticipantName);
 
-    // configure the coupling scheme here
-    _couplingScheme.setMaxTime(1.0);
-    _couplingScheme.setTimeWindowSize(0.1);
+    _couplingScheme.setMaxTime(5.0);
+    _couplingScheme.setTimeWindowSize(0.01);
+    _couplingScheme.setInitialRelaxation(0.5);
+    _couplingScheme.setMaxIterations(50);
 
     if (_participantName == "Solid")
     {
@@ -64,16 +65,16 @@ void ParticipantImplementation::constructFluidParticipantMeshes()
     // Fluid has two meshes one that it provdes and another that it recieves from the Solid. Both have two data vectors
     auto providedMesh = std::make_unique<Mesh>();
     providedMesh->setMeshName(_participantMeshName);
-    providedMesh->addDataToMesh(_participantDataName, _couplingScheme.getCurrentTime());
-    providedMesh->addDataToMesh(_remoteParticipantDataName, _couplingScheme.getCurrentTime());
+    providedMesh->addDataToMesh(_participantDataName, _couplingScheme.getCurrentWindowNumber());
+    providedMesh->addDataToMesh(_remoteParticipantDataName, _couplingScheme.getCurrentWindowNumber());
     providedMesh->setMeshDimensions(2);
 
     _meshes[std::string(providedMesh->getMeshName())] = std::move(providedMesh);
 
     auto receivedMesh = std::make_unique<Mesh>();
     receivedMesh->setMeshName(_remoteParticipantMeshName);
-    receivedMesh->addDataToMesh(_participantDataName, _couplingScheme.getCurrentTime());
-    receivedMesh->addDataToMesh(_remoteParticipantDataName, _couplingScheme.getCurrentTime());
+    receivedMesh->addDataToMesh(_participantDataName, _couplingScheme.getCurrentWindowNumber());
+    receivedMesh->addDataToMesh(_remoteParticipantDataName, _couplingScheme.getCurrentWindowNumber());
     receivedMesh->setMeshDimensions(2);
 
     _meshes[std::string(receivedMesh->getMeshName())] = std::move(receivedMesh);
@@ -90,8 +91,8 @@ void ParticipantImplementation::constructSolidParticipantMeshes()
     // Solid only provides one mesh with two data vectors
     auto providedMesh = std::make_unique<Mesh>();
     providedMesh->setMeshName(_participantMeshName);
-    providedMesh->addDataToMesh(_participantDataName, _couplingScheme.getCurrentTime());
-    providedMesh->addDataToMesh(_remoteParticipantDataName, _couplingScheme.getCurrentTime());
+    providedMesh->addDataToMesh(_participantDataName, _couplingScheme.getCurrentWindowNumber());
+    providedMesh->addDataToMesh(_remoteParticipantDataName, _couplingScheme.getCurrentWindowNumber());
     providedMesh->setMeshDimensions(2);
 
     auto meshKey = std::string(providedMesh->getMeshName());
@@ -132,8 +133,8 @@ void ParticipantImplementation::initialize()
         _meshes.at((_participantName == "Solid") ? _participantMeshName : _remoteParticipantMeshName).get(),
         _remoteSocket);
 
-    // 6. Map Read Data
-    mapReadData();
+    // 6. Map Read Data (data was stored at window 0 during initialize)
+    mapReadData(_couplingScheme.getCurrentWindowNumber());
 
     MINIMALCOUPLER_INFO("Initialization complete!");
 }
@@ -303,11 +304,25 @@ void ParticipantImplementation::readData(precice::string_view meshName, precice:
         throw std::runtime_error("The value array provided is not enough to store all the data values");
     }
 
-    double absoluteTime = _couplingScheme.getCurrentTime() + relativeReadTime;
+    int window = _couplingScheme.getCurrentWindowNumber();
+
+    // After the final advance, the window number may point to a window that was never populated.
+    // Fall back to the latest available window so the solver can still read final results.
+    if (!mesh->checkIfTimeWindowExists(std::string(dataName), window))
+    {
+        auto available = mesh->getAvailableTimeWindows(std::string(dataName));
+        if (available.empty())
+        {
+            throw std::runtime_error("No data available for field " + std::string(dataName));
+        }
+        window = available.back();
+        MINIMALCOUPLER_INFO("Reading data '", dataName, "': window ", _couplingScheme.getCurrentWindowNumber(),
+                            " not available, falling back to window ", window);
+    }
 
     MINIMALCOUPLER_INFO("Reading data '", dataName, "' from mesh '", meshName, "' for ", vertexIDs.size(),
-                        " vertices at time ", absoluteTime);
-    mesh->getDataForVertexId(dataName, vertexIDs, values, absoluteTime);
+                        " vertices at window ", window);
+    mesh->getDataForVertexId(dataName, vertexIDs, values, window);
 }
 
 void ParticipantImplementation::writeData(precice::string_view meshName, precice::string_view dataName,
@@ -342,11 +357,9 @@ void ParticipantImplementation::writeData(precice::string_view meshName, precice
         throw std::runtime_error("The value error provided is not enough to store all the data values");
     }
     std::vector<double> dataToStore(values.data(), values.data() + values.size());
-    // if all of these checks succeded then we just add the data to mesh for ts = end of current timewindow
-    double absoluteTime = _couplingScheme.getCurrentTime();
-    // store the data into the mesh for time window
+    int window = _couplingScheme.getCurrentWindowNumber();
 
-    mesh->addDataToMesh(std::string(dataName), absoluteTime, std::move(dataToStore));
+    mesh->addDataToMesh(std::string(dataName), window, std::move(dataToStore));
 }
 
 void ParticipantImplementation::finalize()
@@ -406,15 +419,15 @@ void ParticipantImplementation::mapWriteData()
         return;
     }
 
-    double currentTime = _couplingScheme.getCurrentTime();
+    int window = _couplingScheme.getCurrentWindowNumber();
     // Before sending force data to solid, the data is mapped from FLuid mesh to solid mesh
-    MINIMALCOUPLER_INFO("Trying to get Force at time: ", currentTime, " for write mapping.");
-    const auto &fluidForceData = _meshes.at(_participantMeshName)->getDataField(_participantDataName, currentTime);
+    MINIMALCOUPLER_INFO("Trying to get Force at window: ", window, " for write mapping.");
+    const auto &fluidForceData = _meshes.at(_participantMeshName)->getDataField(_participantDataName, window);
 
-    // since we are mapping now the timestamp will not exist on the receiving map, so we add it here
-    _meshes.at(_remoteParticipantMeshName)->addDataToMesh(_participantDataName, currentTime);
+    // since we are mapping now the window will not exist on the receiving map, so we add it here
+    _meshes.at(_remoteParticipantMeshName)->addDataToMesh(_participantDataName, window);
 
-    auto &solidForceData = _meshes.at(_remoteParticipantMeshName)->getDataField(_participantDataName, currentTime);
+    auto &solidForceData = _meshes.at(_remoteParticipantMeshName)->getDataField(_participantDataName, window);
 
     NearestNeighbor::mapConservative(_meshes.at(_participantMeshName)->getWriteMapping(), fluidForceData,
                                      solidForceData, _meshes.at(_participantMeshName)->getMeshDimensions());
@@ -427,7 +440,7 @@ void ParticipantImplementation::mapWriteData()
     }
 }
 
-void ParticipantImplementation::mapReadData()
+void ParticipantImplementation::mapReadData(int sourceWindow)
 {
     // No mappings needed for solid
     if (_participantName == "Solid")
@@ -436,16 +449,15 @@ void ParticipantImplementation::mapReadData()
     }
 
     // After receiving displacement data from solid, disp data is mapped from Solid mesh to Fluid mesh
-    double currentTime = _couplingScheme.getCurrentTime();
+    int destWindow = _couplingScheme.getCurrentWindowNumber();
 
-    // As we are just computing read mappings now the destination will not exist so we add it
-    MINIMALCOUPLER_INFO("Trying to get Displacement at time: ", currentTime, " for read mapping.");
-    _meshes.at(_participantMeshName)->addDataToMesh(_remoteParticipantDataName, currentTime);
+    MINIMALCOUPLER_INFO("Mapping Displacement from source window ", sourceWindow, " to dest window ", destWindow);
+    _meshes.at(_participantMeshName)->addDataToMesh(_remoteParticipantDataName, destWindow);
 
-    auto &fluidDispData = _meshes.at(_participantMeshName)->getDataField(_remoteParticipantDataName, currentTime);
+    auto &fluidDispData = _meshes.at(_participantMeshName)->getDataField(_remoteParticipantDataName, destWindow);
 
     const auto &solidDispData =
-        _meshes.at(_remoteParticipantMeshName)->getDataField(_remoteParticipantDataName, currentTime);
+        _meshes.at(_remoteParticipantMeshName)->getDataField(_remoteParticipantDataName, sourceWindow);
 
     NearestNeighbor::mapConsistent(_meshes.at(_participantMeshName)->getReadMapping(), solidDispData, fluidDispData,
                                    _meshes.at(_participantMeshName)->getMeshDimensions());
@@ -467,6 +479,9 @@ void ParticipantImplementation::advance(double computedTimeStepSize)
     // add a check here to map data only if at window end
     if (currentTime + computedTimeStepSize >= currentTime + maxTimeStep)
     {
+        // Capture window number before exchange (coupling may increment it on convergence)
+        int windowBeforeAdvance = _couplingScheme.getCurrentWindowNumber();
+
         // map write data first
         mapWriteData();
 
@@ -477,9 +492,8 @@ void ParticipantImplementation::advance(double computedTimeStepSize)
             computedTimeStepSize, _remoteSocket);
 
         // map data that was received
-        // this check is added because there will be no data to map at the end
         if (isCouplingOngoing())
-            mapReadData();
+            mapReadData(windowBeforeAdvance);
     }
 }
 
@@ -493,14 +507,14 @@ bool ParticipantImplementation::requiresInitialData() const
     return false;
 }
 
-bool ParticipantImplementation::requiresWritingCheckpoint() const
+bool ParticipantImplementation::requiresWritingCheckpoint()
 {
-    return false;
+    return _couplingScheme.requiresWritingCheckpoing();
 }
 
-bool ParticipantImplementation::requiresReadingCheckpoint() const
+bool ParticipantImplementation::requiresReadingCheckpoint() 
 {
-    return false;
+    return _couplingScheme.requiresReadingCheckpoing();
 }
 
 double ParticipantImplementation::getMaxTimeStepSize()
