@@ -1,6 +1,7 @@
 #include "coupling.hpp"
 #include "logger/logger.hpp"
 #include "utils/socketutils.hpp"
+#include "utils/constants.hpp"
 #include <cstring>
 #include <iostream>
 #include <math.h>
@@ -12,7 +13,7 @@ using utils::sendAll;
 using utils::recvAll;
 
 CouplingScheme::CouplingScheme()
-    : _maxTime(0.0), _timeWindowSize(0.0), _initialRelaxation(0.0), _omega(0.0), _convergenceTolerance(1e-6),
+    : _maxTime(0.0), _timeWindowSize(0.0), _initialRelaxation(0.0), _omega(0.0), _convergenceTolerance(Constants::CONVERGENCE_TOLERANCE),
       _iterationNumber(0), _maxIterations(50), _currentTimeWindowNumber(0), _converged(false),
       _requiresWritingCheckPoint(false), _requiresReadingCheckPoint(false), _data(0), _currentResiduals(0),
       _previousResiduals(0)

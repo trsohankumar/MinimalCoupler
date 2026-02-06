@@ -11,6 +11,7 @@
 #include "data/Point.hpp"
 #include "logger/logger.hpp"
 #include "mapping/NearestNeighbor.hpp"
+#include "utils/constants.hpp"
 
 namespace MinimalCoupler
 {
@@ -26,10 +27,10 @@ ParticipantImplementation::ParticipantImplementation(precice::string_view partic
     MINIMALCOUPLER_INFO("I am participant ", _participantName);
     MINIMALCOUPLER_INFO("My remote participant is ", _remoteParticipantName);
 
-    _couplingScheme.setMaxTime(5.0);
-    _couplingScheme.setTimeWindowSize(0.01);
-    _couplingScheme.setInitialRelaxation(0.5);
-    _couplingScheme.setMaxIterations(50);
+    _couplingScheme.setMaxTime(Constants::MAX_TIME);
+    _couplingScheme.setTimeWindowSize(Constants::TIME_WINDOW_SIZE);
+    _couplingScheme.setInitialRelaxation(Constants::INITIAL_RELAXATION);
+    _couplingScheme.setMaxIterations(Constants::MAX_ITERATIONS);
 
     if (_participantName == "Solid")
     {
@@ -67,7 +68,7 @@ void ParticipantImplementation::constructFluidParticipantMeshes()
     providedMesh->setMeshName(_participantMeshName);
     providedMesh->addDataToMesh(_participantDataName, _couplingScheme.getCurrentWindowNumber());
     providedMesh->addDataToMesh(_remoteParticipantDataName, _couplingScheme.getCurrentWindowNumber());
-    providedMesh->setMeshDimensions(2);
+    providedMesh->setMeshDimensions(Constants::MESH_DIMENSIONS);
 
     _meshes[std::string(providedMesh->getMeshName())] = std::move(providedMesh);
 
@@ -75,7 +76,7 @@ void ParticipantImplementation::constructFluidParticipantMeshes()
     receivedMesh->setMeshName(_remoteParticipantMeshName);
     receivedMesh->addDataToMesh(_participantDataName, _couplingScheme.getCurrentWindowNumber());
     receivedMesh->addDataToMesh(_remoteParticipantDataName, _couplingScheme.getCurrentWindowNumber());
-    receivedMesh->setMeshDimensions(2);
+    receivedMesh->setMeshDimensions(Constants::MESH_DIMENSIONS);
 
     _meshes[std::string(receivedMesh->getMeshName())] = std::move(receivedMesh);
 }
@@ -150,7 +151,7 @@ int ParticipantImplementation::getSolidConnectionSocket() const
 
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(5001);
+    serverAddress.sin_port = htons(Constants::SERVER_PORT);
     serverAddress.sin_addr.s_addr = htonl(INADDR_ANY); // Convert to network byte order
 
     if (bind(sock, reinterpret_cast<struct sockaddr *>(&serverAddress), sizeof(serverAddress)) < 0)
@@ -186,7 +187,7 @@ int ParticipantImplementation::getFluidConnectionSocket() const
 
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(5001);
+    serverAddress.sin_port = htons(Constants::SERVER_PORT);
     serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     // Retry mechanism

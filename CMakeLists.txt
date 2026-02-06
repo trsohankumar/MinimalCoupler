@@ -20,6 +20,8 @@ add_library(minimalCoupler SHARED
     mapping/NearestNeighbor.cpp
     impl/ParticipantImpl.hpp
     impl/ParticipantImpl.cpp
+    utils/constants.hpp
+    utils/socketutils.hpp
 )
 
 set_target_properties(minimalCoupler PROPERTIES
