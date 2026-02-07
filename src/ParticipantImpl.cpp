@@ -5,13 +5,14 @@
 #include <stdexcept>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "ParticipantImpl.hpp"
 
-#include "data/Point.hpp"
-#include "logger/logger.hpp"
-#include "mapping/NearestNeighbor.hpp"
-#include "utils/constants.hpp"
+#include "Point.hpp"
+#include "logger.hpp"
+#include "NearestNeighbor.hpp"
+#include "constants.hpp"
 
 namespace MinimalCoupler
 {
@@ -476,9 +477,10 @@ void ParticipantImplementation::advance(double computedTimeStepSize)
 
     double currentTime = _couplingScheme.getCurrentTime();
     double maxTimeStep = _couplingScheme.getMaxTimeStepSize();
+    double timeWindowSize = _couplingScheme.getTimeWinowSize();
 
     // add a check here to map data only if at window end
-    if (currentTime + computedTimeStepSize >= currentTime + maxTimeStep)
+    if (std::lround((currentTime + computedTimeStepSize)/timeWindowSize) >= std::lround((currentTime + maxTimeStep)/timeWindowSize))
     {
         // Capture window number before exchange (coupling may increment it on convergence)
         int windowBeforeAdvance = _couplingScheme.getCurrentWindowNumber();

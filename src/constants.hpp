@@ -10,5 +10,4 @@ namespace MinimalCoupler::Constants{
     const int SERVER_PORT = 5001;
     const double CONVERGENCE_TOLERANCE = 1e-6;
 
-
 }

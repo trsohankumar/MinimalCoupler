@@ -1,6 +1,6 @@
 #pragma once
 
-#include "logger/logger.hpp"
+#include "logger.hpp"
 #include <cstddef>
 #include <stdexcept>
 #include <sys/socket.h>

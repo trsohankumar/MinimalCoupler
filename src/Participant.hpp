@@ -1,6 +1,6 @@
 #pragma once
 
-#include "impl/ParticipantImpl.hpp"
+#include "ParticipantImpl.hpp"
 #include "precice/types.hpp"
 #include <memory>
 #include <string>

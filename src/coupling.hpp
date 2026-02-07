@@ -1,5 +1,5 @@
 #pragma once
-#include "data/Mesh.hpp"
+#include "Mesh.hpp"
 #include "precice/types.hpp"
 
 namespace MinimalCoupler

@@ -1,7 +1,7 @@
 #include "coupling.hpp"
-#include "logger/logger.hpp"
-#include "utils/socketutils.hpp"
-#include "utils/constants.hpp"
+#include "logger.hpp"
+#include "socketutils.hpp"
+#include "constants.hpp"
 #include <cstring>
 #include <iostream>
 #include <math.h>
@@ -262,16 +262,6 @@ bool CouplingScheme::requiresReadingCheckpoing()
 void CouplingScheme::advance(precice::string_view participantName, Mesh *mesh, double computedTimeStepSize,
                              int remoteSocket)
 {
-    // Check if this timestep completes the current window
-    double nextTime = getCurrentTime() + computedTimeStepSize;
-    double windowEnd = _timeWindowSize * (_currentTimeWindowNumber + 1);
-
-    if (nextTime < windowEnd)
-    {
-        MINIMALCOUPLER_INFO("Time step of ", computedTimeStepSize, " does not complete window. Returning.");
-        return;
-    }
-
     if (participantName == "Fluid")
     {
         MINIMALCOUPLER_INFO("Advance with window number", _currentTimeWindowNumber);

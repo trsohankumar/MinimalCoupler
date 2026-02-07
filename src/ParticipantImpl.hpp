@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "couplingscheme/coupling.hpp"
-#include "data/Mesh.hpp"
+#include "coupling.hpp"
+#include "Mesh.hpp"
 #include "precice/types.hpp"
 
 namespace MinimalCoupler

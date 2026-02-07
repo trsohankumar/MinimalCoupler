@@ -2,7 +2,7 @@
 #include <memory>
 #include <vector>
 
-#include "../data/Point.hpp"
+#include "Point.hpp"
 
 namespace MinimalCoupler
 {

@@ -1,27 +1,27 @@
 cmake_minimum_required(VERSION 3.28)
 project(minimalCoupler)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 
 add_library(minimalCoupler SHARED
-    precice/precice.hpp
-    precice/precice.cpp
-    precice/types.hpp
-    participant/Participant.hpp
-    participant/Participant.cpp
-    logger/logger.hpp
-    logger/logger.cpp
-    data/Mesh.hpp
-    data/Mesh.cpp
-    data/Point.hpp
-    couplingscheme/coupling.hpp
-    couplingscheme/coupling.cpp
-    mapping/NearestNeighbor.hpp
-    mapping/NearestNeighbor.cpp
-    impl/ParticipantImpl.hpp
-    impl/ParticipantImpl.cpp
-    utils/constants.hpp
-    utils/socketutils.hpp
+    src/precice/precice.hpp
+    src/precice/precice.cpp
+    src/precice/types.hpp
+    src/Participant.hpp
+    src/Participant.cpp
+    src/logger.hpp
+    src/logger.cpp
+    src/Mesh.hpp
+    src/Mesh.cpp
+    src/Point.hpp
+    src/coupling.hpp
+    src/coupling.cpp
+    src/NearestNeighbor.hpp
+    src/NearestNeighbor.cpp
+    src/ParticipantImpl.hpp
+    src/ParticipantImpl.cpp
+    src/constants.hpp
+    src/socketutils.hpp
 )
 
 set_target_properties(minimalCoupler PROPERTIES
