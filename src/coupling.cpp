@@ -3,6 +3,7 @@
 #include "socketutils.hpp"
 #include "constants.hpp"
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <math.h>
 
@@ -15,8 +16,8 @@ using utils::recvAll;
 CouplingScheme::CouplingScheme()
     : _maxTime(0.0), _timeWindowSize(0.0), _initialRelaxation(0.0), _omega(0.0), _convergenceTolerance(Constants::CONVERGENCE_TOLERANCE),
       _iterationNumber(0), _maxIterations(50), _currentTimeWindowNumber(0), _converged(false),
-      _requiresWritingCheckPoint(false), _requiresReadingCheckPoint(false), _data(0), _currentResiduals(0),
-      _previousResiduals(0)
+      _requiresWritingCheckPoint(false), _requiresReadingCheckPoint(false),
+      _data(0), _currentResiduals(0), _previousResiduals(0)
 {
 }
 
@@ -80,8 +81,18 @@ void CouplingScheme::updateRelaxation()
 {
     if (_iterationNumber == 0)
     {
-        MINIMALCOUPLER_INFO("Using initial relaxation as this is iteration number:", _iterationNumber);
-        _omega = _initialRelaxation;
+        if (_omega == 0.0)
+        {
+            // Very first window: no previous omega to preserve
+            _omega = _initialRelaxation;
+        }
+        else
+        {
+            // preserve sign of previous omega, cap magnitude at initialRelaxation
+            double sign = (_omega < 0.0) ? -1.0 : 1.0;
+            _omega = sign * std::min(std::abs(_omega), _initialRelaxation);
+        }
+        MINIMALCOUPLER_INFO("Using initial relaxation for iteration 0, omega:", _omega);
     }
     else
     {
@@ -101,57 +112,91 @@ void CouplingScheme::updateRelaxation()
     }
 }
 
-void CouplingScheme::computeAitkenRelaxedOutput(std::vector<double> &outputData)
+double CouplingScheme::computeVectorNorm(const std::vector<double>& data) const
+{
+    double squaredSum = 0.0;
+    for (auto it: data)
+    {
+        squaredSum += it * it;
+    }
+
+    return std::sqrt(squaredSum);
+}
+
+std::vector<double> CouplingScheme::vectorDifference(std::vector<double>& first, std::vector<double>& second)
+{
+    std::vector<double> diff(first.size());
+    for(size_t i = 0; i < first.size(); i++)
+        diff[i] = first[i] - second[i];
+
+    return diff;
+}
+
+void CouplingScheme::computeAitkenRelaxedOutput(std::vector<double> &newData)
 {
     MINIMALCOUPLER_INFO("Running Aitken relaxation for window number:", _currentTimeWindowNumber, ", and iteration number: ", _iterationNumber);
 
     _converged = false;
-    computeResiduals(outputData);
-    updateRelaxation();
+    computeResiduals(newData);
 
-    // update formula: d(i+2) = d(i+1) + w(i+1)(residuals)
-    for (size_t i = 0; i < _data.size(); i++)
+    // Compute L2 norm of new solver output for relative convergence measure
+    double diffNorm = computeVectorNorm(vectorDifference(newData, _data));
+    double newDataNorm = computeVectorNorm(newData);
+
+    bool isConverged = diffNorm <= newDataNorm * _convergenceTolerance;
+
+    checkConvergence(isConverged);
+    // Write values to file for debugging
+    if (_convergenceLog.is_open())
     {
-        _data[i] = _data[i] + _omega * _currentResiduals[i];
+        _convergenceLog << _currentTimeWindowNumber << "\t"
+                        << _iterationNumber << "\t"
+                        << std::scientific << std::setprecision(6) << diffNorm / newDataNorm << "\t"  
+                        << (_converged ? 1 : 0) << std::endl;
     }
 
-    checkConvergence();
+    if (_converged) 
+    {
+        _data = newData;
+    }
+    else 
+    {
+        updateRelaxation();
 
-    _previousResiduals = std::move(_currentResiduals);
-    _iterationNumber++; 
+        // update formula: d(i+2) = d(i+1) + w(i+1)(residuals)
+        for (size_t i = 0; i < _data.size(); i++)
+        {
+            _data[i] = _data[i] + _omega * _currentResiduals[i];
+        }
+
+        _previousResiduals = std::move(_currentResiduals);
+        _iterationNumber++;
+    }
 }
 
-void CouplingScheme::checkConvergence()
+void CouplingScheme::checkConvergence(bool isConverged)
 {
-    // this is to check of convergence
-    double scaledNorm = computeScaledResidualNorm();
 
-    if (scaledNorm < _convergenceTolerance)
+    if (isConverged)
     {
         _converged = true;
-        MINIMALCOUPLER_INFO("Aitken converged after iteration:" , _iterationNumber);
-        _iterationNumber = 0;
+        MINIMALCOUPLER_INFO("Aitken converged after iteration:", _iterationNumber);
     }
     else if (_iterationNumber >= _maxIterations)
     {
         _converged = true;
-        MINIMALCOUPLER_INFO("Convergence not acheived within maxIterations:  (", _maxIterations, "). The current residual norm is: ", scaledNorm,", Moving on to next window");
-        _iterationNumber = 0;
+        MINIMALCOUPLER_INFO("Convergence not acheived within maxIterations:  (", _maxIterations, "), Moving on to next window");
     }
     else
     {
-        MINIMALCOUPLER_INFO("Aitken has not converged yet", _iterationNumber);
+        MINIMALCOUPLER_INFO("Aitken has not converged yet, iteration: ", _iterationNumber);
     }
 }
 
-double CouplingScheme::computeScaledResidualNorm() const
+void CouplingScheme::openConvergenceLog()
 {
-    double norm = 0.0;
-    for (auto it : _currentResiduals)
-    {
-        norm += (it * it);
-    }
-    return std::sqrt(norm) / std::sqrt(_currentResiduals.size());
+    _convergenceLog.open("convergence.log", std::ios::out | std::ios::trunc);
+    _convergenceLog << "TimeWindow\tIteration\tResRel\tConverged" << std::endl;
 }
 
 void CouplingScheme::initialize(precice::string_view participantName, Mesh *mesh, int remoteSocket)
@@ -197,6 +242,8 @@ void CouplingScheme::initialize(precice::string_view participantName, Mesh *mesh
         // Initialize _data for Aitken relaxation with current displacement as first guess
         _data = std::vector<double>(solidData.begin(), solidData.end());
         MINIMALCOUPLER_INFO("Initialized Aitken _data with ", _data.size(), " values");
+
+        openConvergenceLog();
     }
 
     // Solid blocks waiting for first Force from Fluid's advance()
@@ -302,9 +349,11 @@ void CouplingScheme::advance(precice::string_view participantName, Mesh *mesh, d
         {
             _currentTimeWindowNumber++;
             MINIMALCOUPLER_INFO("Window converged, Hence Advanced to window ", _currentTimeWindowNumber);
+            enableRequiresWritingCheckpoint();
         }
         else
         {
+            enableRequiresReadingCheckpoint();
             MINIMALCOUPLER_INFO(" Window has not converged");
         }
     }
@@ -347,6 +396,7 @@ void CouplingScheme::advance(precice::string_view participantName, Mesh *mesh, d
         if (_converged)
         {
             _currentTimeWindowNumber++;
+            _iterationNumber = 0;
             MINIMALCOUPLER_INFO("Window  has converged, Hence Advanced to window ", _currentTimeWindowNumber);
             enableRequiresWritingCheckpoint();
         }

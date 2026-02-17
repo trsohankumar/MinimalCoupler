@@ -397,19 +397,7 @@ void ParticipantImplementation::computeMappings()
         MINIMALCOUPLER_FILE_INFO("Fluid Vertex: (", fluidMeshVertices[m.id].x, ",", fluidMeshVertices[m.id].y,
                                  ") maps to Solid Vertex ", m.id, ": (", m.x, ", ", m.y, ")");
     }
-
-    MINIMALCOUPLER_INFO("Computing mappings between Solid and Fluid meshes vertices");
-    auto solidToFluidMapping = nnMapper.computeNearestNeighbors(fluidMeshVertices, solidMeshVertices);
-
-    MINIMALCOUPLER_FILE_INFO("Solid to Fluid Mapping (read):");
-    for (const auto &m : solidToFluidMapping)
-    {
-        MINIMALCOUPLER_FILE_INFO("Solid Vertex: (", solidMeshVertices[m.id].x, ",", solidMeshVertices[m.id].y,
-                                 ") maps to Fluid Vertex ", m.id, ": (", m.x, ", ", m.y, ")");
-    }
-
-    _meshes.at(_participantMeshName)->setWriteMapping(std::move(fluidToSolidMapping));
-    _meshes.at(_participantMeshName)->setReadMapping(std::move(solidToFluidMapping));
+    _meshes.at(_participantMeshName)->setVertexMapping(std::move(fluidToSolidMapping));
 }
 
 void ParticipantImplementation::mapWriteData()
@@ -431,7 +419,7 @@ void ParticipantImplementation::mapWriteData()
 
     auto &solidForceData = _meshes.at(_remoteParticipantMeshName)->getDataField(_participantDataName, window);
 
-    NearestNeighbor::mapConservative(_meshes.at(_participantMeshName)->getWriteMapping(), fluidForceData,
+    NearestNeighbor::mapConservative(_meshes.at(_participantMeshName)->getVertexMapping(), fluidForceData,
                                      solidForceData, _meshes.at(_participantMeshName)->getMeshDimensions());
 
     MINIMALCOUPLER_FILE_INFO("Mapping force data from Fluid to Solid");
@@ -461,7 +449,7 @@ void ParticipantImplementation::mapReadData(int sourceWindow)
     const auto &solidDispData =
         _meshes.at(_remoteParticipantMeshName)->getDataField(_remoteParticipantDataName, sourceWindow);
 
-    NearestNeighbor::mapConsistent(_meshes.at(_participantMeshName)->getReadMapping(), solidDispData, fluidDispData,
+    NearestNeighbor::mapConsistent(_meshes.at(_participantMeshName)->getVertexMapping(), solidDispData, fluidDispData,
                                    _meshes.at(_participantMeshName)->getMeshDimensions());
 
     MINIMALCOUPLER_FILE_INFO("Mapping displacement data from Solid mesh to Fluid mesh");

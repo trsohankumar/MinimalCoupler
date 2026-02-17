@@ -8,6 +8,6 @@ namespace MinimalCoupler::Constants{
     const int MAX_ITERATIONS = 50;
     const int MESH_DIMENSIONS = 2;
     const int SERVER_PORT = 5001;
-    const double CONVERGENCE_TOLERANCE = 1e-6;
-
+    const double CONVERGENCE_TOLERANCE = 5e-3;
+    
 }

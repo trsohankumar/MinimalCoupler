@@ -1,6 +1,7 @@
 #pragma once
 #include "Mesh.hpp"
 #include "precice/types.hpp"
+#include <fstream>
 
 namespace MinimalCoupler
 {
@@ -25,7 +26,7 @@ class CouplingScheme
     bool isCouplingOnGoing() const;
     double getMaxTimeStepSize() const;
     bool isTimeWindowComplete() const;
-    void checkConvergence();
+    void checkConvergence(bool isConverged);
     double getL2NormOfResiduals() const;
 
   private:
@@ -34,8 +35,9 @@ class CouplingScheme
     void setPreviousResiduals(std::vector<double> &oldResiduals);
     void updateRelaxation();
     void computeAitkenRelaxedOutput(std::vector<double> &outputData);
-    double computeScaledResidualNorm() const;
 
+    double computeVectorNorm(const std::vector<double>& data) const;
+    std::vector<double> vectorDifference(std::vector<double>& first, std::vector<double>& second);
     void enableRequiresWritingCheckpoint();
     void enableRequiresReadingCheckpoint();
     void disableRequiresWritingCheckpoint();
@@ -52,8 +54,11 @@ class CouplingScheme
     bool _converged;
     bool _requiresWritingCheckPoint;
     bool _requiresReadingCheckPoint;
+    void openConvergenceLog();
+
     std::vector<double> _data;
     std::vector<double> _currentResiduals;
     std::vector<double> _previousResiduals;
+    std::ofstream _convergenceLog;
 };
 } // namespace MinimalCoupler

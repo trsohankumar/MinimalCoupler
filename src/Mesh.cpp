@@ -62,24 +62,14 @@ const std::vector<Point> &Mesh::getMeshVertices() const
     return _vertices;
 }
 
-void Mesh::setReadMapping(std::vector<Point> &&vertexMapping)
+void Mesh::setVertexMapping(std::vector<Point> &&vertexMapping)
 {
-    _readVertexMapping = std::move(vertexMapping);
+    _vertexMapping = std::move(vertexMapping);
 }
 
-void Mesh::setWriteMapping(std::vector<Point> &&vertexMapping)
+const std::vector<Point> &Mesh::getVertexMapping() const
 {
-    _writeVertexMapping = std::move(vertexMapping);
-}
-
-const std::vector<Point> &Mesh::getReadMapping() const
-{
-    return _readVertexMapping;
-}
-
-const std::vector<Point> &Mesh::getWriteMapping() const
-{
-    return _writeVertexMapping;
+    return _vertexMapping;
 }
 
 std::vector<double> &Mesh::getDataField(const std::string &dataName, int timeWindow)

@@ -25,9 +25,7 @@ class Mesh
 
     void setMeshVertices(std::vector<Point> vertices);
 
-    void setReadMapping(std::vector<Point> &&vertexMapping);
-
-    void setWriteMapping(std::vector<Point> &&vertexMapping);
+    void setVertexMapping(std::vector<Point> &&vertexMapping);
 
     void addDataToMesh(const std::string &dataName, int timeWindow, std::vector<double> &&inputData = {});
 
@@ -40,10 +38,7 @@ class Mesh
     void allocateDataFields();
 
     const std::vector<Point> &getMeshVertices() const;
-
-    const std::vector<Point> &getReadMapping() const;
-
-    const std::vector<Point> &getWriteMapping() const;
+    const std::vector<Point> &getVertexMapping() const;
 
     std::vector<double> &getDataField(const std::string &dataName, int timeWindow);
 
@@ -61,8 +56,7 @@ class Mesh
   private:
     std::string _meshName;
     std::vector<Point> _vertices;
-    std::vector<Point> _readVertexMapping;
-    std::vector<Point> _writeVertexMapping;
+    std::vector<Point> _vertexMapping;
     int _dimensions;
     std::unordered_map<std::string, std::map<int, std::vector<double>>> _dataFields;
     MeshType _meshType;
