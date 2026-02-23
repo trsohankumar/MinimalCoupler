@@ -67,6 +67,11 @@ class ParticipantImplementation
     void computeMappings();
     void mapWriteData();
     void mapReadData(int sourceWindow);
+
+    void computeNearestNeighbors(const std::vector<Point> &queryPoints, const std::vector<Point> &searchSpaceOfPoints);
+    double euclideanDistance(const Point &p1, const Point &p2) const;
+
+
     std::string _participantName;
     std::string _remoteParticipantName;
     std::string _configFileName;
@@ -79,5 +84,6 @@ class ParticipantImplementation
     int _size;
     int _remoteSocket;
     std::unordered_map<std::string, std::unique_ptr<Mesh>> _meshes;
+    std::vector<Point> _vertexMapping;
 };
 } // namespace MinimalCoupler

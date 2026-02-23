@@ -28,6 +28,7 @@ class CouplingScheme
     bool isTimeWindowComplete() const;
     void checkConvergence(bool isConverged);
     double getL2NormOfResiduals() const;
+    void setWatchPointIndex(int index);
 
   private:
     void setPreviousData(std::vector<double> previousData);
@@ -55,10 +56,14 @@ class CouplingScheme
     bool _requiresWritingCheckPoint;
     bool _requiresReadingCheckPoint;
     void openConvergenceLog();
+    void setupWatchpoint(Mesh *mesh);
+    void writeWatchpointEntry(double time, Mesh *mesh, int window);
 
     std::vector<double> _data;
     std::vector<double> _currentResiduals;
     std::vector<double> _previousResiduals;
     std::ofstream _convergenceLog;
+    std::ofstream _watchpointLog;
+    int _watchpointVertexIndex;
 };
 } // namespace MinimalCoupler

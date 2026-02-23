@@ -11,8 +11,8 @@
 
 #include "Point.hpp"
 #include "logger.hpp"
-#include "NearestNeighbor.hpp"
 #include "constants.hpp"
+#include <algorithm>
 
 namespace MinimalCoupler
 {
@@ -275,6 +275,25 @@ void ParticipantImplementation::setMeshVertices(precice::string_view meshName, p
 
     mesh->setMeshVertices(vertices);
     mesh->allocateDataFields(); // Allocates dimensions * vertexCount for each data field
+
+    // I setup the watchpoint index here
+    if (meshName == "Solid-Mesh")
+    {
+        Point watchPoint {-1, Constants::WATCHPOINT_X, Constants::WATCHPOINT_Y};
+        Point closestPoint;
+        double bestDist = std::numeric_limits<double>::max();
+        const auto &verts = mesh->getMeshVertices();
+        for (const auto &v : verts)
+        {
+            double dist = euclideanDistance(watchPoint, v);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                closestPoint = v;
+            }
+        }
+        _couplingScheme.setWatchPointIndex(closestPoint.id);
+    }
 }
 
 void ParticipantImplementation::readData(precice::string_view meshName, precice::string_view dataName,
@@ -373,6 +392,9 @@ void ParticipantImplementation::finalize()
     }
 }
 
+/*
+Function is a wrapper that is called to map each Fluid vertex to a solid Vertex
+*/
 void ParticipantImplementation::computeMappings()
 {
     // No mappings needed for solid
@@ -381,28 +403,22 @@ void ParticipantImplementation::computeMappings()
         return;
     }
 
-    // Here we compute vertex mapping from Solid -> FLuid mesh and Fluid-> Solid. This will help in further read and
+    // Here we compute vertex mapping from Fluid -> Solid mesh .This will help in further read and
     // write data mappings
     MINIMALCOUPLER_INFO("Computing mappings between Fluid and Solid meshes vertices");
-    NearestNeighbor nnMapper;
 
     const auto &fluidMeshVertices = _meshes.at(_participantMeshName)->getMeshVertices();
     const auto &solidMeshVertices = _meshes.at(_remoteParticipantMeshName)->getMeshVertices();
 
-    auto fluidToSolidMapping = nnMapper.computeNearestNeighbors(solidMeshVertices, fluidMeshVertices);
-
-    MINIMALCOUPLER_FILE_INFO("Fluid to Solid Mapping (write):");
-    for (const auto &m : fluidToSolidMapping)
-    {
-        MINIMALCOUPLER_FILE_INFO("Fluid Vertex: (", fluidMeshVertices[m.id].x, ",", fluidMeshVertices[m.id].y,
-                                 ") maps to Solid Vertex ", m.id, ": (", m.x, ", ", m.y, ")");
-    }
-    _meshes.at(_participantMeshName)->setVertexMapping(std::move(fluidToSolidMapping));
+    // actual NN computaion takes place here
+    computeNearestNeighbors(fluidMeshVertices, solidMeshVertices);
 }
 
+/*
+Functions mapps data from fluid to solid participant conservatively
+*/
 void ParticipantImplementation::mapWriteData()
 {
-
     // No mappings needed for solid
     if (_participantName == "Solid")
     {
@@ -410,26 +426,33 @@ void ParticipantImplementation::mapWriteData()
     }
 
     int window = _couplingScheme.getCurrentWindowNumber();
+
     // Before sending force data to solid, the data is mapped from FLuid mesh to solid mesh
-    MINIMALCOUPLER_INFO("Trying to get Force at window: ", window, " for write mapping.");
-    const auto &fluidForceData = _meshes.at(_participantMeshName)->getDataField(_participantDataName, window);
+    MINIMALCOUPLER_INFO("Retreive to get Force at window: ", window, " for write mapping.");
+    auto &fluidForceData = _meshes.at(_participantMeshName)->getDataField(_participantDataName, window);
 
     // since we are mapping now the window will not exist on the receiving map, so we add it here
     _meshes.at(_remoteParticipantMeshName)->addDataToMesh(_participantDataName, window);
 
+    auto dimensions = _meshes.at(_participantMeshName)->getMeshDimensions();
     auto &solidForceData = _meshes.at(_remoteParticipantMeshName)->getDataField(_participantDataName, window);
 
-    NearestNeighbor::mapConservative(_meshes.at(_participantMeshName)->getVertexMapping(), fluidForceData,
-                                     solidForceData, _meshes.at(_participantMeshName)->getMeshDimensions());
-
-    MINIMALCOUPLER_FILE_INFO("Mapping force data from Fluid to Solid");
-    int dim = _meshes.at(_remoteParticipantMeshName)->getMeshDimensions();
-    for (size_t i = 0; i < solidForceData.size(); i += dim)
+    // for every force data in fluid vertex and each mapping I sum up the fluid force data from the fluid mesh 
+    // and store it as force data in the solid mesh  
+    std::ranges::fill(solidForceData, 0.0);
+    for (size_t i = 0; i < _vertexMapping.size(); ++i)
     {
-        MINIMALCOUPLER_FILE_INFO("Vertex ", i / dim, ": (", solidForceData[i], ", ", solidForceData[i + 1], ")");
+        int targetVertexID = _vertexMapping[i].id;
+        for (int d = 0; d < dimensions; ++d)
+        {
+            solidForceData[targetVertexID * dimensions + d] += fluidForceData[i * dimensions + d];
+        }
     }
 }
 
+/*
+Functions mapps data from solid to fluid participant consistently
+*/
 void ParticipantImplementation::mapReadData(int sourceWindow)
 {
     // No mappings needed for solid
@@ -442,21 +465,25 @@ void ParticipantImplementation::mapReadData(int sourceWindow)
     int destWindow = _couplingScheme.getCurrentWindowNumber();
 
     MINIMALCOUPLER_INFO("Mapping Displacement from source window ", sourceWindow, " to dest window ", destWindow);
+    auto &solidDispData = _meshes.at(_remoteParticipantMeshName)->getDataField(_remoteParticipantDataName, sourceWindow);
+
+    // since we are mapping now the window will not exist on the receiving map, so we add it here
     _meshes.at(_participantMeshName)->addDataToMesh(_remoteParticipantDataName, destWindow);
 
     auto &fluidDispData = _meshes.at(_participantMeshName)->getDataField(_remoteParticipantDataName, destWindow);
 
-    const auto &solidDispData =
-        _meshes.at(_remoteParticipantMeshName)->getDataField(_remoteParticipantDataName, sourceWindow);
+    auto dimensions = _meshes.at(_participantMeshName)->getMeshDimensions();
+    fluidDispData.resize(_vertexMapping.size() * dimensions);
+    std::ranges::fill(fluidDispData, 0.0);
 
-    NearestNeighbor::mapConsistent(_meshes.at(_participantMeshName)->getVertexMapping(), solidDispData, fluidDispData,
-                                   _meshes.at(_participantMeshName)->getMeshDimensions());
-
-    MINIMALCOUPLER_FILE_INFO("Mapping displacement data from Solid mesh to Fluid mesh");
-    int dim = _meshes.at(_participantMeshName)->getMeshDimensions();
-    for (size_t i = 0; i < fluidDispData.size(); i += dim)
+    // for every disp data in solid vertex and each mapping I store it as it is in the fluid's solid mesh  
+    for (size_t i = 0; i < _vertexMapping.size(); ++i)
     {
-        MINIMALCOUPLER_FILE_INFO("Vertex ", i / dim, ": (", fluidDispData[i], ", ", fluidDispData[i + 1], ")");
+        int sourceVertexID = _vertexMapping[i].id;
+        for (int d = 0; d < dimensions; ++d)
+        {
+            fluidDispData[i * dimensions + d] = solidDispData[sourceVertexID * dimensions + d];
+        }
     }
 }
 
@@ -524,5 +551,33 @@ void ParticipantImplementation::startProfilingSection(const std::string &name)
 
 void ParticipantImplementation::stopLastProfilingSection()
 {
+}
+
+double ParticipantImplementation::euclideanDistance(const Point &p1, const Point &p2) const
+{
+    return std::sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+}
+
+/*
+Function computes the nearest neighbors for each point in queryPoints to each point in searchSpaceOfPoints
+and sets the _vertexMapping variable.
+*/
+void ParticipantImplementation::computeNearestNeighbors(const std::vector<Point> &queryPoints, const std::vector<Point> &searchSpaceOfPoints)
+{
+    _vertexMapping.resize(queryPoints.size());
+
+    for (size_t i = 0; i < queryPoints.size(); ++i)
+    {
+        double bestDist = std::numeric_limits<double>::max();
+        for (size_t j = 0; j < searchSpaceOfPoints.size(); ++j)
+        {
+            double dist = euclideanDistance(queryPoints[i], searchSpaceOfPoints[j]);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                _vertexMapping[i] = searchSpaceOfPoints[j];
+            }
+        }
+    }
 }
 } // namespace MinimalCoupler

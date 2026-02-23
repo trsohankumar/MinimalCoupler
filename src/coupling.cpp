@@ -17,7 +17,7 @@ CouplingScheme::CouplingScheme()
     : _maxTime(0.0), _timeWindowSize(0.0), _initialRelaxation(0.0), _omega(0.0), _convergenceTolerance(Constants::CONVERGENCE_TOLERANCE),
       _iterationNumber(0), _maxIterations(50), _currentTimeWindowNumber(0), _converged(false),
       _requiresWritingCheckPoint(false), _requiresReadingCheckPoint(false),
-      _data(0), _currentResiduals(0), _previousResiduals(0)
+      _data(0), _currentResiduals(0), _previousResiduals(0), _watchpointVertexIndex(-1)
 {
 }
 
@@ -149,9 +149,9 @@ void CouplingScheme::computeAitkenRelaxedOutput(std::vector<double> &newData)
     // Write values to file for debugging
     if (_convergenceLog.is_open())
     {
-        _convergenceLog << _currentTimeWindowNumber << "\t"
-                        << _iterationNumber << "\t"
-                        << std::scientific << std::setprecision(6) << diffNorm / newDataNorm << "\t"  
+        _convergenceLog << (_currentTimeWindowNumber + 1) << "\t"
+                        << (_iterationNumber + 1) << "\t"
+                        << std::scientific << std::setprecision(6) << diffNorm / newDataNorm << "\t"
                         << (_converged ? 1 : 0) << std::endl;
     }
 
@@ -197,6 +197,41 @@ void CouplingScheme::openConvergenceLog()
 {
     _convergenceLog.open("convergence.log", std::ios::out | std::ios::trunc);
     _convergenceLog << "TimeWindow\tIteration\tResRel\tConverged" << std::endl;
+
+    _watchpointLog.open("watchpoint-Flap-Tip.log", std::ios::out | std::ios::trunc);
+    _watchpointLog << "  Time  Coordinate0  Coordinate1  Displacement0  Displacement1  Force0  Force1" << std::endl;
+}
+
+
+void CouplingScheme::setWatchPointIndex(int index)
+{
+   _watchpointVertexIndex = index; 
+}
+
+void CouplingScheme::writeWatchpointEntry(double time, Mesh *mesh, int window)
+{
+    if (!_watchpointLog.is_open() || _watchpointVertexIndex < 0)
+        return;
+
+    const auto &vertices = mesh->getMeshVertices();
+    int vidx = _watchpointVertexIndex;
+
+    double disp0 = _data[vidx * 2];
+    double disp1 = _data[vidx * 2 + 1];
+
+    const auto &forceData = mesh->getDataField("Force", window);
+    MINIMALCOUPLER_INFO("WATCHPOINT DEBUG: window=", window, " vidx=", vidx,
+                        " forceData.size()=", forceData.size(),
+                        " forceData[0]=", (forceData.empty() ? 0.0 : forceData[0]),
+                        " forceData[1]=", (forceData.size() > 1 ? forceData[1] : 0.0));
+    double force0 = forceData[vidx * 2];
+    double force1 = forceData[vidx * 2 + 1];
+    MINIMALCOUPLER_INFO("WATCHPOINT DEBUG: force0=", force0, " force1=", force1);
+
+    _watchpointLog << " " << std::scientific << std::setprecision(8)
+                   << time << "  " << vertices[vidx].x << "   " << vertices[vidx].y
+                   << "   " << disp0 << "   " << disp1
+                   << "   " << force0 << "  " << force1 << std::endl;
 }
 
 void CouplingScheme::initialize(precice::string_view participantName, Mesh *mesh, int remoteSocket)
@@ -244,6 +279,7 @@ void CouplingScheme::initialize(precice::string_view participantName, Mesh *mesh
         MINIMALCOUPLER_INFO("Initialized Aitken _data with ", _data.size(), " values");
 
         openConvergenceLog();
+        writeWatchpointEntry(0.0, mesh, _currentTimeWindowNumber);
     }
 
     // Solid blocks waiting for first Force from Fluid's advance()
@@ -258,7 +294,16 @@ void CouplingScheme::initialize(precice::string_view participantName, Mesh *mesh
 
         // This Force is for solving window 0, so store at current window
         MINIMALCOUPLER_INFO("Received ", forceSize, " force values for window ", _currentTimeWindowNumber);
+        MINIMALCOUPLER_INFO("FORCE RECV DEBUG (init block2): first values = ",
+                            (forceSize > 0 ? forceData[0] : 0.0), ", ",
+                            (forceSize > 1 ? forceData[1] : 0.0));
         mesh->addDataToMesh("Force", _currentTimeWindowNumber, std::move(forceData));
+        // Verify stored correctly
+        {
+            const auto &storedForce = mesh->getDataField("Force", _currentTimeWindowNumber);
+            MINIMALCOUPLER_INFO("FORCE VERIFY (init block2): stored[0]=", storedForce[0], " stored[1]=", storedForce[1],
+                                " size=", storedForce.size());
+        }
         MINIMALCOUPLER_INFO("Initialize complete, ready to run solver");
     }
 
@@ -395,9 +440,11 @@ void CouplingScheme::advance(precice::string_view participantName, Mesh *mesh, d
 
         if (_converged)
         {
+            int convergedWindow = _currentTimeWindowNumber;
             _currentTimeWindowNumber++;
             _iterationNumber = 0;
             MINIMALCOUPLER_INFO("Window  has converged, Hence Advanced to window ", _currentTimeWindowNumber);
+            writeWatchpointEntry(_currentTimeWindowNumber * _timeWindowSize, mesh, convergedWindow);
             enableRequiresWritingCheckpoint();
         }
         else
@@ -416,6 +463,9 @@ void CouplingScheme::advance(precice::string_view participantName, Mesh *mesh, d
             recvAll(remoteSocket, forceData.data(), forceSize * sizeof(double));
 
             MINIMALCOUPLER_INFO("Solid: Received ", forceSize, " force values for window ", _currentTimeWindowNumber);
+            MINIMALCOUPLER_INFO("FORCE RECV DEBUG (advance): first values = ",
+                                (forceSize > 0 ? forceData[0] : 0.0), ", ",
+                                (forceSize > 1 ? forceData[1] : 0.0));
             mesh->addDataToMesh("Force", _currentTimeWindowNumber, std::move(forceData));
         }
         else
