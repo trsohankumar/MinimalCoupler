@@ -6,7 +6,7 @@ Mesh::Mesh() : _dimensions(0), _meshType(MeshType::PROVIDED)
 {
 }
 
-std::string_view Mesh::getMeshName() const
+precice::string_view Mesh::getMeshName() const
 {
     return _meshName;
 }
@@ -109,8 +109,7 @@ bool Mesh::checkIfVertexIdExists(const int vertexId) const
     return vertexId < _vertices.size();
 }
 
-void Mesh::getDataForVertexId(precice::string_view dataName, precice::span<const precice::VertexID> vertexId,
-                              precice::span<double> values, int timeWindow)
+void Mesh::getDataForVertexId(precice::string_view dataName, precice::span<const precice::VertexID> vertexId, precice::span<double> values, int timeWindow) const
 {
     const std::vector<double> &dataVector = _dataFields.at(std::string(dataName)).at(timeWindow);
 

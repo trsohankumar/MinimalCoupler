@@ -19,7 +19,7 @@ class Mesh
   public:
     Mesh();
 
-    std::string_view getMeshName() const;
+    precice::string_view getMeshName() const;
 
     void setMeshName(std::string meshName);
 
@@ -50,8 +50,7 @@ class Mesh
 
     bool checkIfVertexIdExists(const int vertexId) const;
 
-    void getDataForVertexId(precice::string_view dataName, precice::span<const precice::VertexID> vertexId,
-                            precice::span<double> values, int timeWindow);
+    void getDataForVertexId(precice::string_view dataName, precice::span<const precice::VertexID> vertexId, precice::span<double> values, int timeWindow) const;
 
   private:
     std::string _meshName;

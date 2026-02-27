@@ -1,15 +1,16 @@
 #include <arpa/inet.h>
-#include <iostream>
 #include <memory>
 #include <netinet/in.h>
 #include <stdexcept>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <math.h>
+#include <iomanip>
 
 #include "ParticipantImpl.hpp"
 
 #include "Point.hpp"
+#include "Utils.hpp"
 #include "logger.hpp"
 #include "constants.hpp"
 #include <algorithm>
@@ -20,19 +21,11 @@ namespace MinimalCoupler
 ParticipantImplementation::ParticipantImplementation(precice::string_view participantName,
                                                      precice::string_view configurationFileName, int solverProcessIndex,
                                                      int solverProcessSize)
-    : _participantName(std::string(participantName)), _configFileName(std::string(configurationFileName)),
-      _couplingScheme(), _rank(solverProcessIndex), _size(solverProcessSize)
+    : _participantName(std::string(participantName)), _configFileName(std::string(configurationFileName)), _rank(solverProcessIndex), _size(solverProcessSize),
+    _maxTime(Constants::MAX_TIME), _timeWindowSize(Constants::TIME_WINDOW_SIZE), _currentTimeWindowNumber(0),
+      _requiresWritingCheckPoint(false), _requiresReadingCheckPoint(false), _watchpointVertexIndex(-1)
 
 {
-
-    MINIMALCOUPLER_INFO("I am participant ", _participantName);
-    MINIMALCOUPLER_INFO("My remote participant is ", _remoteParticipantName);
-
-    _couplingScheme.setMaxTime(Constants::MAX_TIME);
-    _couplingScheme.setTimeWindowSize(Constants::TIME_WINDOW_SIZE);
-    _couplingScheme.setInitialRelaxation(Constants::INITIAL_RELAXATION);
-    _couplingScheme.setMaxIterations(Constants::MAX_ITERATIONS);
-
     if (_participantName == "Solid")
     {
         _remoteParticipantName = "Fluid";
@@ -59,27 +52,25 @@ ParticipantImplementation::ParticipantImplementation(precice::string_view partic
         // setup logging into a file
         Logger::getInstance().setLogFile("Fluid.log");
     }
+    MINIMALCOUPLER_INFO("I am participant ", _participantName);
+    MINIMALCOUPLER_INFO("My remote participant is ", _remoteParticipantName);
 }
 
+/*
+Function constructs two meshes provided and received with two data vectors for Fluid and Solid
+*/
 void ParticipantImplementation::constructFluidParticipantMeshes()
 {
-
     // Fluid has two meshes one that it provdes and another that it recieves from the Solid. Both have two data vectors
-    auto providedMesh = std::make_unique<Mesh>();
-    providedMesh->setMeshName(_participantMeshName);
-    providedMesh->addDataToMesh(_participantDataName, _couplingScheme.getCurrentWindowNumber());
-    providedMesh->addDataToMesh(_remoteParticipantDataName, _couplingScheme.getCurrentWindowNumber());
-    providedMesh->setMeshDimensions(Constants::MESH_DIMENSIONS);
+    _providedMesh.setMeshName(_participantMeshName);
+    _providedMesh.addDataToMesh(_participantDataName, _currentTimeWindowNumber);
+    _providedMesh.addDataToMesh(_remoteParticipantDataName, _currentTimeWindowNumber);
+    _providedMesh.setMeshDimensions(Constants::MESH_DIMENSIONS);
 
-    _meshes[std::string(providedMesh->getMeshName())] = std::move(providedMesh);
-
-    auto receivedMesh = std::make_unique<Mesh>();
-    receivedMesh->setMeshName(_remoteParticipantMeshName);
-    receivedMesh->addDataToMesh(_participantDataName, _couplingScheme.getCurrentWindowNumber());
-    receivedMesh->addDataToMesh(_remoteParticipantDataName, _couplingScheme.getCurrentWindowNumber());
-    receivedMesh->setMeshDimensions(Constants::MESH_DIMENSIONS);
-
-    _meshes[std::string(receivedMesh->getMeshName())] = std::move(receivedMesh);
+    _receivedMesh.setMeshName(_remoteParticipantMeshName);
+    _receivedMesh.addDataToMesh(_participantDataName, _currentTimeWindowNumber);
+    _receivedMesh.addDataToMesh(_remoteParticipantDataName, _currentTimeWindowNumber);
+    _receivedMesh.setMeshDimensions(Constants::MESH_DIMENSIONS);
 }
 
 ParticipantImplementation::~ParticipantImplementation()
@@ -87,18 +78,16 @@ ParticipantImplementation::~ParticipantImplementation()
     finalize();
 }
 
+/*
+Function constructs a mesh with two data vectors for Fluid and Solid
+*/
 void ParticipantImplementation::constructSolidParticipantMeshes()
 {
-
     // Solid only provides one mesh with two data vectors
-    auto providedMesh = std::make_unique<Mesh>();
-    providedMesh->setMeshName(_participantMeshName);
-    providedMesh->addDataToMesh(_participantDataName, _couplingScheme.getCurrentWindowNumber());
-    providedMesh->addDataToMesh(_remoteParticipantDataName, _couplingScheme.getCurrentWindowNumber());
-    providedMesh->setMeshDimensions(2);
-
-    auto meshKey = std::string(providedMesh->getMeshName());
-    _meshes[meshKey] = std::move(providedMesh);
+    _providedMesh.setMeshName(_participantMeshName);
+    _providedMesh.addDataToMesh(_participantDataName, _currentTimeWindowNumber);
+    _providedMesh.addDataToMesh(_remoteParticipantDataName, _currentTimeWindowNumber);
+    _providedMesh.setMeshDimensions(Constants::MESH_DIMENSIONS);
 }
 
 void ParticipantImplementation::initialize()
@@ -129,14 +118,11 @@ void ParticipantImplementation::initialize()
     // 4. Map Write Data (at time 0 for initialization)
     mapWriteData();
 
-    // 5. Initialize the coupling scheme
-    _couplingScheme.initialize(
-        _participantName,
-        _meshes.at((_participantName == "Solid") ? _participantMeshName : _remoteParticipantMeshName).get(),
-        _remoteSocket);
+    // 5. Initialize coupling scheme
+    couplingSchemeInitialize();
 
     // 6. Map Read Data (data was stored at window 0 during initialize)
-    mapReadData(_couplingScheme.getCurrentWindowNumber());
+    mapReadData(_currentTimeWindowNumber);
 
     MINIMALCOUPLER_INFO("Initialization complete!");
 }
@@ -209,63 +195,57 @@ int ParticipantImplementation::getFluidConnectionSocket() const
     return sock;
 }
 
+/*
+Function is called by Solid to send vertices to Fluid
+*/
 void ParticipantImplementation::sendMeshVertices() const
 {
     // function sends mesh vertices to Fluid participant
     std::string meshName = _participantMeshName;
 
-    size_t size = _meshes.at(meshName)->getVertexCount();
+    Utils::sendPoints(_remoteSocket, _providedMesh.getMeshVertices());
+    size_t size = _providedMesh.getVertexCount();
     MINIMALCOUPLER_INFO("Sending ", size, " vertices");
-    send(_remoteSocket, &size, sizeof(size), 0);
-
-    if (size > 0)
-    {
-        auto vertices = _meshes.at(meshName)->getMeshVertices();
-
-        MINIMALCOUPLER_FILE_INFO("Vertices being sent:");
-        for (size_t i = 0; i < vertices.size(); ++i)
-        {
-            MINIMALCOUPLER_FILE_INFO("Vertex ", i, ": (", vertices[i].x, ", ", vertices[i].y, ")");
-        }
-
-        send(_remoteSocket, vertices.data(), size * sizeof(Point), 0);
-    }
 }
 
 int ParticipantImplementation::getMeshDimensions(precice::string_view meshName) const
 {
-    return _meshes.at(std::string(meshName))->getMeshDimensions();
+    return (std::string(_providedMesh.getMeshName()) == std::string(meshName)) ?  _providedMesh.getMeshDimensions(): _receivedMesh.getMeshDimensions();
 }
 
-void ParticipantImplementation::receiveMeshVertices() const
+/*
+Function is called by Fluid to recv vertices from Solid
+*/
+void ParticipantImplementation::receiveMeshVertices()
 {
     // recieves mesh vertices from the Solid Participant
-    size_t size;
-    recv(_remoteSocket, &size, sizeof(size), 0);
-    MINIMALCOUPLER_INFO("Receiving ", size, " vertices from Solid");
-
-    if (size > 0)
-    {
-        std::vector<Point> vertices(size);
-        recv(_remoteSocket, vertices.data(), size * sizeof(Point), MSG_WAITALL);
-
-        MINIMALCOUPLER_INFO("Solid mesh vertices set.");
-        _meshes.at(_remoteParticipantMeshName)->setMeshVertices(vertices);
-        _meshes.at(_remoteParticipantMeshName)->allocateDataFields();
-    }
+    std::vector<Point> data;
+    Utils::recvPoints(_remoteSocket, data);
+    _receivedMesh.setMeshVertices(data);
+    _receivedMesh.allocateDataFields();
+    MINIMALCOUPLER_INFO("Recieved ", _receivedMesh.getVertexCount(), " vertices from Solid");
 }
 
-void ParticipantImplementation::setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates,
-                                                precice::span<int> ids)
+/*
+Function recv mesh vertices from the user and sets these vertices to provided mesh and gives back to
+the use the vertex ID
+*/
+void ParticipantImplementation::setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates, precice::span<int> ids)
 {
 
     // recieves flat point vector from user and contructs a vector of points for the participants mesh
-    auto &mesh = _meshes[std::string(meshName)];
-    int dim = mesh->getMeshDimensions();
+    if (std::string(meshName) != std::string(_providedMesh.getMeshName()))
+    {
+        throw std::runtime_error("Setting vertices for received mesh is not allowed");
+        return;
+    }
+
+    int dim = _providedMesh.getMeshDimensions();
 
     std::vector<Point> vertices;
     vertices.reserve(coordinates.size() / dim);
 
+    // Math to store vertices because vertieces is a vector of Points
     for (size_t i = 0; i < coordinates.size(); i += dim)
     {
         ids[i / dim] = static_cast<precice::VertexID>(i / dim);
@@ -273,8 +253,8 @@ void ParticipantImplementation::setMeshVertices(precice::string_view meshName, p
         vertices.emplace_back(std::move(v));
     }
 
-    mesh->setMeshVertices(vertices);
-    mesh->allocateDataFields(); // Allocates dimensions * vertexCount for each data field
+    _providedMesh.setMeshVertices(vertices);
+    _providedMesh.allocateDataFields(); // Allocates dimensions * vertexCount for each data field
 
     // I setup the watchpoint index here
     if (meshName == "Solid-Mesh")
@@ -282,105 +262,97 @@ void ParticipantImplementation::setMeshVertices(precice::string_view meshName, p
         Point watchPoint {-1, Constants::WATCHPOINT_X, Constants::WATCHPOINT_Y};
         Point closestPoint;
         double bestDist = std::numeric_limits<double>::max();
-        const auto &verts = mesh->getMeshVertices();
+        const auto &verts = _providedMesh.getMeshVertices();
         for (const auto &v : verts)
         {
-            double dist = euclideanDistance(watchPoint, v);
+            double dist = Utils::euclideanDistance(watchPoint, v);
             if (dist < bestDist)
             {
                 bestDist = dist;
                 closestPoint = v;
             }
         }
-        _couplingScheme.setWatchPointIndex(closestPoint.id);
+        _watchpointVertexIndex = closestPoint.id;
     }
 }
 
 void ParticipantImplementation::readData(precice::string_view meshName, precice::string_view dataName,
-                                         precice::span<const precice::VertexID> vertexIDs, double relativeReadTime,
-                                         precice::span<double> values) const
+precice::span<const precice::VertexID> vertexIDs, double relativeReadTime, precice::span<double> values) const
 {
 
-    if (!_meshes.contains(std::string(meshName)))
+    if (std::string(meshName) != std::string(_providedMesh.getMeshName()))
     {
         throw std::runtime_error("Mesh with name " + std::string(meshName) + " not found");
     }
-    auto &mesh = _meshes.at(std::string(meshName));
 
-    if (!mesh->checkIfDataFieldExists(std::string(dataName)))
+    if (!_providedMesh.checkIfDataFieldExists(std::string(dataName)))
     {
         throw std::runtime_error("Data field with name " + std::string(dataName) + " not found");
     }
 
     for (auto id : vertexIDs)
     {
-        if (!mesh->checkIfVertexIdExists(id))
+        if (!_providedMesh.checkIfVertexIdExists(id))
         {
             throw std::runtime_error("Vertex with id " + std::to_string(id) + " does not exist");
         }
     }
 
-    if (vertexIDs.size() * mesh->getMeshDimensions() != values.size())
+    if (vertexIDs.size() * _providedMesh.getMeshDimensions() != values.size())
     {
         throw std::runtime_error("The value array provided is not enough to store all the data values");
     }
 
-    int window = _couplingScheme.getCurrentWindowNumber();
+    int window = _currentTimeWindowNumber;
 
     // After the final advance, the window number may point to a window that was never populated.
     // Fall back to the latest available window so the solver can still read final results.
-    if (!mesh->checkIfTimeWindowExists(std::string(dataName), window))
+    if (!_providedMesh.checkIfTimeWindowExists(std::string(dataName), window))
     {
-        auto available = mesh->getAvailableTimeWindows(std::string(dataName));
+        auto available = _providedMesh.getAvailableTimeWindows(std::string(dataName));
         if (available.empty())
         {
             throw std::runtime_error("No data available for field " + std::string(dataName));
         }
         window = available.back();
-        MINIMALCOUPLER_INFO("Reading data '", dataName, "': window ", _couplingScheme.getCurrentWindowNumber(),
-                            " not available, falling back to window ", window);
+        MINIMALCOUPLER_INFO("Reading data '", dataName, "': window ", _currentTimeWindowNumber, " not available, falling back to window ", window);
     }
 
-    MINIMALCOUPLER_INFO("Reading data '", dataName, "' from mesh '", meshName, "' for ", vertexIDs.size(),
-                        " vertices at window ", window);
-    mesh->getDataForVertexId(dataName, vertexIDs, values, window);
+    MINIMALCOUPLER_INFO("Reading data '", dataName, "' from mesh '", meshName, "' for ", vertexIDs.size(), " vertices at window ", window);
+    _providedMesh.getDataForVertexId(dataName, vertexIDs, values, window);
 }
 
 void ParticipantImplementation::writeData(precice::string_view meshName, precice::string_view dataName,
-                                          precice::span<const precice::VertexID> vertexIDs,
-                                          precice::span<const double> values)
+precice::span<const precice::VertexID> vertexIDs, precice::span<const double> values)
 {
 
-    MINIMALCOUPLER_INFO("Writing data '", dataName, "' to mesh '", meshName, "' for ", vertexIDs.size(), " vertices");
-
-    // check if meshName exists
-    if (!_meshes.contains(std::string(meshName)))
+    if (std::string(meshName) != std::string(_providedMesh.getMeshName()))
     {
         throw std::runtime_error("Mesh with name " + std::string(meshName) + " not found");
     }
-    auto &mesh = _meshes.at(std::string(meshName));
+
+    MINIMALCOUPLER_INFO("Writing data '", dataName, "' to mesh '", meshName, "' for ", vertexIDs.size(), " vertices");
+
     // check if data name exists
-    if (!mesh->checkIfDataFieldExists(std::string(dataName)))
+    if (!_providedMesh.checkIfDataFieldExists(std::string(dataName)))
     {
         throw std::runtime_error("Data field with name " + std::string(dataName) + " not found");
     }
     // check if all the vertex locations are actually correct
     for (auto id : vertexIDs)
     {
-        if (!mesh->checkIfVertexIdExists(id))
+        if (!_providedMesh.checkIfVertexIdExists(id))
         {
             throw std::runtime_error("Vertex with id " + std::to_string(id) + " does not exist");
         }
     }
     // check if size of value = size of vertexIds * dimensions =  size of values
-    if (vertexIDs.size() * mesh->getMeshDimensions() != values.size())
+    if (vertexIDs.size() * _providedMesh.getMeshDimensions() != values.size())
     {
         throw std::runtime_error("The value error provided is not enough to store all the data values");
     }
     std::vector<double> dataToStore(values.data(), values.data() + values.size());
-    int window = _couplingScheme.getCurrentWindowNumber();
-
-    mesh->addDataToMesh(std::string(dataName), window, std::move(dataToStore));
+    _providedMesh.addDataToMesh(std::string(dataName), _currentTimeWindowNumber, std::move(dataToStore));
 }
 
 void ParticipantImplementation::finalize()
@@ -407,8 +379,8 @@ void ParticipantImplementation::computeMappings()
     // write data mappings
     MINIMALCOUPLER_INFO("Computing mappings between Fluid and Solid meshes vertices");
 
-    const auto &fluidMeshVertices = _meshes.at(_participantMeshName)->getMeshVertices();
-    const auto &solidMeshVertices = _meshes.at(_remoteParticipantMeshName)->getMeshVertices();
+    const auto &fluidMeshVertices = _providedMesh.getMeshVertices();
+    const auto &solidMeshVertices = _receivedMesh.getMeshVertices();
 
     // actual NN computaion takes place here
     computeNearestNeighbors(fluidMeshVertices, solidMeshVertices);
@@ -425,17 +397,15 @@ void ParticipantImplementation::mapWriteData()
         return;
     }
 
-    int window = _couplingScheme.getCurrentWindowNumber();
-
     // Before sending force data to solid, the data is mapped from FLuid mesh to solid mesh
-    MINIMALCOUPLER_INFO("Retreive to get Force at window: ", window, " for write mapping.");
-    auto &fluidForceData = _meshes.at(_participantMeshName)->getDataField(_participantDataName, window);
+    MINIMALCOUPLER_INFO("Retreive to get Force at window: ", _currentTimeWindowNumber, " for write mapping.");
+    auto &fluidForceData = _providedMesh.getDataField(_participantDataName, _currentTimeWindowNumber);
 
     // since we are mapping now the window will not exist on the receiving map, so we add it here
-    _meshes.at(_remoteParticipantMeshName)->addDataToMesh(_participantDataName, window);
+    _receivedMesh.addDataToMesh(_participantDataName, _currentTimeWindowNumber);
 
-    auto dimensions = _meshes.at(_participantMeshName)->getMeshDimensions();
-    auto &solidForceData = _meshes.at(_remoteParticipantMeshName)->getDataField(_participantDataName, window);
+    auto dimensions = _providedMesh.getMeshDimensions();
+    auto &solidForceData = _receivedMesh.getDataField(_participantDataName, _currentTimeWindowNumber);
 
     // for every force data in fluid vertex and each mapping I sum up the fluid force data from the fluid mesh 
     // and store it as force data in the solid mesh  
@@ -462,17 +432,17 @@ void ParticipantImplementation::mapReadData(int sourceWindow)
     }
 
     // After receiving displacement data from solid, disp data is mapped from Solid mesh to Fluid mesh
-    int destWindow = _couplingScheme.getCurrentWindowNumber();
+    int destWindow = _currentTimeWindowNumber;
 
     MINIMALCOUPLER_INFO("Mapping Displacement from source window ", sourceWindow, " to dest window ", destWindow);
-    auto &solidDispData = _meshes.at(_remoteParticipantMeshName)->getDataField(_remoteParticipantDataName, sourceWindow);
+    auto &solidDispData = _receivedMesh.getDataField(_remoteParticipantDataName, sourceWindow);
 
     // since we are mapping now the window will not exist on the receiving map, so we add it here
-    _meshes.at(_participantMeshName)->addDataToMesh(_remoteParticipantDataName, destWindow);
+    _providedMesh.addDataToMesh(_remoteParticipantDataName, destWindow);
 
-    auto &fluidDispData = _meshes.at(_participantMeshName)->getDataField(_remoteParticipantDataName, destWindow);
+    auto &fluidDispData = _providedMesh.getDataField(_remoteParticipantDataName, destWindow);
 
-    auto dimensions = _meshes.at(_participantMeshName)->getMeshDimensions();
+    auto dimensions = _providedMesh.getMeshDimensions();
     fluidDispData.resize(_vertexMapping.size() * dimensions);
     std::ranges::fill(fluidDispData, 0.0);
 
@@ -490,24 +460,19 @@ void ParticipantImplementation::mapReadData(int sourceWindow)
 void ParticipantImplementation::advance(double computedTimeStepSize)
 {
 
-    double currentTime = _couplingScheme.getCurrentTime();
-    double maxTimeStep = _couplingScheme.getMaxTimeStepSize();
-    double timeWindowSize = _couplingScheme.getTimeWinowSize();
+    double currentTime = getCurrentTime();
 
-    // add a check here to map data only if at window end
-    if (std::lround((currentTime + computedTimeStepSize)/timeWindowSize) >= std::lround((currentTime + maxTimeStep)/timeWindowSize))
+    double windowEnd = _timeWindowSize * (_currentTimeWindowNumber + 1);
+    if (currentTime + computedTimeStepSize >= windowEnd - Constants::DOUBLE_EQUALITY_BOUND)
     {
         // Capture window number before exchange (coupling may increment it on convergence)
-        int windowBeforeAdvance = _couplingScheme.getCurrentWindowNumber();
+        int windowBeforeAdvance = _currentTimeWindowNumber;
 
         // map write data first
         mapWriteData();
 
         // exchange data
-        _couplingScheme.advance(
-            _participantName,
-            _meshes.at((_participantName == "Solid") ? _participantMeshName : _remoteParticipantMeshName).get(),
-            computedTimeStepSize, _remoteSocket);
+        couplingSchemeAdvance();
 
         // map data that was received
         if (isCouplingOngoing())
@@ -517,46 +482,41 @@ void ParticipantImplementation::advance(double computedTimeStepSize)
 
 bool ParticipantImplementation::isCouplingOngoing()
 {
-    return _couplingScheme.isCouplingOnGoing();
-}
-
-bool ParticipantImplementation::requiresInitialData() const
-{
-    return false;
+    return getCurrentTime() < _maxTime;
 }
 
 bool ParticipantImplementation::requiresWritingCheckpoint()
 {
-    return _couplingScheme.requiresWritingCheckpoing();
+    
+    bool res = _requiresWritingCheckPoint;
+    if (_requiresWritingCheckPoint)
+    {
+        _requiresWritingCheckPoint = false;
+    }
+    return res;
 }
 
 bool ParticipantImplementation::requiresReadingCheckpoint() 
 {
-    return _couplingScheme.requiresReadingCheckpoing();
+    bool res = _requiresReadingCheckPoint;
+    if (_requiresReadingCheckPoint)
+    {
+        _requiresReadingCheckPoint = false;
+    }
+    return res;
 }
 
 double ParticipantImplementation::getMaxTimeStepSize()
 {
-    return _couplingScheme.getMaxTimeStepSize();
+    // Returns time until the next window end
+    return _timeWindowSize * (_currentTimeWindowNumber + 1) - getCurrentTime();
 }
 
 bool ParticipantImplementation::isTimeWindowComplete()
 {
-    return _couplingScheme.isTimeWindowComplete();
+    return _aitken.isConverged();
 }
 
-void ParticipantImplementation::startProfilingSection(const std::string &name)
-{
-}
-
-void ParticipantImplementation::stopLastProfilingSection()
-{
-}
-
-double ParticipantImplementation::euclideanDistance(const Point &p1, const Point &p2) const
-{
-    return std::sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
-}
 
 /*
 Function computes the nearest neighbors for each point in queryPoints to each point in searchSpaceOfPoints
@@ -571,7 +531,7 @@ void ParticipantImplementation::computeNearestNeighbors(const std::vector<Point>
         double bestDist = std::numeric_limits<double>::max();
         for (size_t j = 0; j < searchSpaceOfPoints.size(); ++j)
         {
-            double dist = euclideanDistance(queryPoints[i], searchSpaceOfPoints[j]);
+            double dist = Utils::euclideanDistance(queryPoints[i], searchSpaceOfPoints[j]);
             if (dist < bestDist)
             {
                 bestDist = dist;
@@ -580,4 +540,237 @@ void ParticipantImplementation::computeNearestNeighbors(const std::vector<Point>
         }
     }
 }
+
+double ParticipantImplementation::getCurrentTime() const
+{
+    return _timeWindowSize * _currentTimeWindowNumber;
+}
+
+void ParticipantImplementation::openConvergenceLog()
+{
+    _convergenceLog.open("convergence.log", std::ios::out | std::ios::trunc);
+    _convergenceLog << "TimeWindow\tIteration\tResRel\tConverged" << std::endl;
+
+    _watchpointLog.open("watchpoint-Flap-Tip.log", std::ios::out | std::ios::trunc);
+    _watchpointLog << "  Time  Coordinate0  Coordinate1  Displacement0  Displacement1  Force0  Force1" << std::endl;
+}
+
+void ParticipantImplementation::writeWatchpointEntry(double time, int window)
+{
+    if (!_watchpointLog.is_open() || _watchpointVertexIndex < 0)
+        return;
+
+    const auto &vertices = _providedMesh.getMeshVertices();
+    int vidx = _watchpointVertexIndex;
+
+    const auto &relaxedData = _aitken.getRelaxedData();
+    double disp0 = relaxedData[vidx * 2];
+    double disp1 = relaxedData[vidx * 2 + 1];
+
+    const auto &forceData = _providedMesh.getDataField("Force", window);
+    double force0 = forceData[vidx * 2];
+    double force1 = forceData[vidx * 2 + 1];
+
+    _watchpointLog << " " << std::scientific << std::setprecision(8)
+                   << time << "  " << vertices[vidx].x << "   " << vertices[vidx].y
+                   << "   " << disp0 << "   " << disp1
+                   << "   " << force0 << "  " << force1 << std::endl;
+}
+
+void ParticipantImplementation::couplingSchemeInitialize()
+{
+    MINIMALCOUPLER_INFO("Current window = ", _currentTimeWindowNumber);
+
+    if (_participantName == "Fluid")
+    {
+        MINIMALCOUPLER_INFO("Retrieving Force data at window ", _currentTimeWindowNumber); 
+        const auto &fluidData = _receivedMesh.getDataField("Force", _currentTimeWindowNumber);
+        
+        MINIMALCOUPLER_INFO("Sending ", fluidData.size(), " initial force values to Solid");
+        Utils::sendVector(_remoteSocket, fluidData);
+
+        std::vector<double> dispData;
+        Utils::recvVector(_remoteSocket, dispData);
+        MINIMALCOUPLER_INFO("Received ", dispData.size(), " initial displacement values from Solid");
+
+        _receivedMesh.addDataToMesh("Displacement", _currentTimeWindowNumber, std::move(dispData));
+        MINIMALCOUPLER_INFO("Initialize complete");
+    }
+
+    if (_participantName == "Solid")
+    {
+        std::vector<double> forceData;
+        Utils::recvVector(_remoteSocket, forceData);
+        MINIMALCOUPLER_INFO("Received ", forceData.size(), " initial force values from Fluid");
+
+        _providedMesh.addDataToMesh(_remoteParticipantDataName, _currentTimeWindowNumber, std::move(forceData));
+
+        const auto &solidData = _providedMesh.getDataField(_participantDataName, _currentTimeWindowNumber);
+        MINIMALCOUPLER_INFO("Sending ", solidData.size(), " initial displacement values to Fluid");
+        Utils::sendVector(_remoteSocket, solidData);
+
+        // Initialize _data for Aitken relaxation with current displacement as first guess
+        _aitken.setRelaxedData(solidData);
+
+        openConvergenceLog();
+        writeWatchpointEntry(0.0, _currentTimeWindowNumber);
+    }
+
+    // Solid blocks waiting for first Force from Fluid's advance()
+    if (_participantName == "Solid")
+    {
+        MINIMALCOUPLER_INFO("Blocking, waiting for Force from Fluid's first advance()...");
+
+        std::vector<double> forceData;
+        Utils::recvVector(_remoteSocket, forceData);
+
+        // This Force is for solving window 0, so store at current window
+        MINIMALCOUPLER_INFO("Received ", forceData.size(), " force values for window ", _currentTimeWindowNumber);
+        MINIMALCOUPLER_INFO("FORCE RECV DEBUG (init block2): first values = ",
+                            (!forceData.empty() ? forceData[0] : 0.0), ", ",
+                            (forceData.size() > 1 ? forceData[1] : 0.0));
+        _providedMesh.addDataToMesh(_remoteParticipantDataName, _currentTimeWindowNumber, std::move(forceData));
+        // Verify stored correctly
+            const auto &storedForce = _providedMesh.getDataField(_remoteParticipantDataName, _currentTimeWindowNumber);
+            MINIMALCOUPLER_INFO("FORCE VERIFY (init block2): stored[0]=", storedForce[0], " stored[1]=", storedForce[1], " size=", storedForce.size());
+        MINIMALCOUPLER_INFO("Initialize complete, ready to run solver");
+    }
+
+    _requiresWritingCheckPoint = true;
+}
+
+
+void ParticipantImplementation::couplingSchemeAdvance()
+{
+    if (_participantName == "Fluid")
+    {
+        MINIMALCOUPLER_INFO("Advance with window number", _currentTimeWindowNumber);
+
+        // Validate Force data exists at current window
+        if (!_receivedMesh.checkIfTimeWindowExists("Force", _currentTimeWindowNumber))
+        {
+            MINIMALCOUPLER_INFO("ERROR: Force data does not exist at window ", _currentTimeWindowNumber, "!");
+            auto windows = _receivedMesh.getAvailableTimeWindows("Force");
+            MINIMALCOUPLER_INFO("Available Force windows: ");
+            for (int w : windows)
+            {
+                MINIMALCOUPLER_INFO("  - ", w);
+            }
+            return;
+        }
+
+        // Send Force for current iteration
+        const auto &fluidData = _receivedMesh.getDataField("Force", _currentTimeWindowNumber);
+        MINIMALCOUPLER_INFO("Fluid: Sending ", fluidData.size(), " force values to Solid");
+        Utils::sendVector(_remoteSocket, fluidData);
+
+        // Block waiting for Displacement + convergence from Solid
+        MINIMALCOUPLER_INFO("Waiting for Displacement data and convergence data from Solid...");
+        std::vector<double> dispData;
+        Utils::recvVector(_remoteSocket, dispData);
+        bool converged;
+        Utils::recvBool(_remoteSocket, converged);
+
+        // Store received displacement at current window
+        MINIMALCOUPLER_INFO("Received displacement values numbered:", dispData.size(), " and converged: ", converged);
+        _receivedMesh.addDataToMesh("Displacement", _currentTimeWindowNumber, std::move(dispData));
+
+        if (converged)
+        {
+            _currentTimeWindowNumber++;
+            MINIMALCOUPLER_INFO("Window converged, Hence Advanced to window ", _currentTimeWindowNumber);
+            _requiresWritingCheckPoint = true;
+        }
+        else
+        {
+            _requiresReadingCheckPoint = true;
+            MINIMALCOUPLER_INFO(" Window has not converged");
+        }
+    }
+
+    if (_participantName == "Solid")
+    {
+        MINIMALCOUPLER_INFO("Advance with window number", _currentTimeWindowNumber);
+
+        // Validate Displacement data exists at current window
+        if (!_providedMesh.checkIfTimeWindowExists("Displacement", _currentTimeWindowNumber))
+        {
+            MINIMALCOUPLER_INFO("ERROR: Displacement data does not exist at window ", _currentTimeWindowNumber, "!");
+            auto windows = _providedMesh.getAvailableTimeWindows("Displacement");
+            MINIMALCOUPLER_INFO("Available Displacement windows: ");
+            for (int w : windows)
+            {
+                MINIMALCOUPLER_INFO("  - ", w);
+            }
+            return;
+        }
+
+        // Solid already has Force (received in initialize or previous advance)
+        // Solver has run, now get raw Displacement output
+        const auto &rawDispData = _providedMesh.getDataField("Displacement", _currentTimeWindowNumber);
+        MINIMALCOUPLER_INFO("Solid: Got raw displacement (", rawDispData.size(), " values) from solver");
+
+        // Apply Aitken relaxation and check convergence
+        std::vector<double> rawDispVec(rawDispData.begin(), rawDispData.end());
+        _aitken.computeAitkenRelaxedOutput(rawDispVec);
+
+        // Write convergence log
+        if (_convergenceLog.is_open())
+        {
+            _convergenceLog << (_currentTimeWindowNumber + 1) << "\t"
+                            << (_aitken.getIterationNumber() + 1) << "\t"
+                            << std::scientific << std::setprecision(6) << _aitken.getResidualForLog() << "\t"
+                            << (_aitken.isConverged() ? 1 : 0) << std::endl;
+        }
+
+        // Send RELAXED displacement, not raw
+        const auto &relaxedData = _aitken.getRelaxedData();
+        MINIMALCOUPLER_INFO("Sending ", relaxedData.size(), " relaxed displacement values to Fluid");
+        Utils::sendVector(_remoteSocket, relaxedData);
+        bool converged = _aitken.isConverged();
+        MINIMALCOUPLER_INFO("Sending convergence status: ", converged);
+        Utils::sendBool(_remoteSocket, converged);
+
+        if (converged)
+        {
+            int convergedWindow = _currentTimeWindowNumber;
+            _currentTimeWindowNumber++;
+            _aitken.resetIteration();
+            MINIMALCOUPLER_INFO("Window  has converged, Hence Advanced to window ", _currentTimeWindowNumber);
+            writeWatchpointEntry(_currentTimeWindowNumber * _timeWindowSize, convergedWindow);
+            _requiresWritingCheckPoint = true;
+        }
+        else
+        {
+            _requiresReadingCheckPoint = true;
+            MINIMALCOUPLER_INFO("Window has not converged");
+        }
+
+        if (isCouplingOngoing())
+        {
+            MINIMALCOUPLER_INFO("Waiting for Force from Fluid for window ", _currentTimeWindowNumber, "...");
+
+            std::vector<double> forceData;
+            Utils::recvVector(_remoteSocket, forceData);
+
+            MINIMALCOUPLER_INFO("Solid: Received ", forceData.size(), " force values for window ", _currentTimeWindowNumber);
+            MINIMALCOUPLER_INFO("FORCE RECV DEBUG (advance): first values = ",
+                                (!forceData.empty() ? forceData[0] : 0.0), ", ",
+                                (forceData.size() > 1 ? forceData[1] : 0.0));
+            _providedMesh.addDataToMesh("Force", _currentTimeWindowNumber, std::move(forceData));
+        }
+        else
+        {
+            MINIMALCOUPLER_INFO("Solid: Coupling complete. No more data to receive.");
+
+            int prevWindow = _currentTimeWindowNumber - 1;
+            if (_providedMesh.checkIfTimeWindowExists("Force", prevWindow))
+            {
+                auto lastForce = _providedMesh.getDataField("Force", prevWindow);
+                _providedMesh.addDataToMesh("Force", _currentTimeWindowNumber, std::move(lastForce));
+            }
+        }
+    }
+}
+
 } // namespace MinimalCoupler

@@ -14,14 +14,13 @@ add_library(minimalCoupler SHARED
     src/Mesh.hpp
     src/Mesh.cpp
     src/Point.hpp
-    src/coupling.hpp
-    src/coupling.cpp
-    src/NearestNeighbor.hpp
-    src/NearestNeighbor.cpp
     src/ParticipantImpl.hpp
     src/ParticipantImpl.cpp
     src/constants.hpp
-    src/socketutils.hpp
+    src/Aitken.hpp
+    src/Aitken.cpp
+    src/Utils.hpp
+    src/Utils.cpp
 )
 
 set_target_properties(minimalCoupler PROPERTIES

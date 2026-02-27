@@ -1,13 +1,15 @@
 #pragma once
 
+#include <fstream>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "coupling.hpp"
 #include "Mesh.hpp"
+#include "Aitken.hpp"
 #include "precice/types.hpp"
+
 
 namespace MinimalCoupler
 {
@@ -43,17 +45,12 @@ class ParticipantImplementation
 
     // Status queries
     bool isCouplingOngoing();
-    bool requiresInitialData() const;
     bool requiresWritingCheckpoint();
     bool requiresReadingCheckpoint();
 
     bool isTimeWindowComplete();
     double getMaxTimeStepSize();
 
-    // Profiling
-    void startProfilingSection(const std::string &name);
-
-    void stopLastProfilingSection();
 
   private:
     void constructFluidParticipantMeshes();
@@ -63,27 +60,45 @@ class ParticipantImplementation
     int getFluidConnectionSocket() const;
 
     void sendMeshVertices() const;
-    void receiveMeshVertices() const;
+    void receiveMeshVertices();
     void computeMappings();
     void mapWriteData();
     void mapReadData(int sourceWindow);
 
     void computeNearestNeighbors(const std::vector<Point> &queryPoints, const std::vector<Point> &searchSpaceOfPoints);
-    double euclideanDistance(const Point &p1, const Point &p2) const;
+
+    double getCurrentTime() const;
+    void couplingSchemeInitialize();
+
+    void couplingSchemeAdvance();
 
 
+
+    void openConvergenceLog();
+    void writeWatchpointEntry(double time, int window);
+
+
+    bool _requiresWritingCheckPoint;
+    bool _requiresReadingCheckPoint;
+    double _maxTime;
+    double _timeWindowSize;
+    int _rank;
+    int _size;
+    int _remoteSocket;
+    int _watchpointVertexIndex;
+    int _currentTimeWindowNumber;
     std::string _participantName;
     std::string _remoteParticipantName;
     std::string _configFileName;
-    CouplingScheme _couplingScheme;
     std::string _participantMeshName;
     std::string _remoteParticipantMeshName;
     std::string _participantDataName;
     std::string _remoteParticipantDataName;
-    int _rank;
-    int _size;
-    int _remoteSocket;
-    std::unordered_map<std::string, std::unique_ptr<Mesh>> _meshes;
+    Mesh _providedMesh;
+    Mesh _receivedMesh;
+    Aitken _aitken;
     std::vector<Point> _vertexMapping;
+    std::ofstream _convergenceLog;
+    std::ofstream _watchpointLog;
 };
 } // namespace MinimalCoupler

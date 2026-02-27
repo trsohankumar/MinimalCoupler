@@ -12,5 +12,6 @@ namespace MinimalCoupler::Constants{
 
     const double WATCHPOINT_X = -8.33333334e-03;
     const double WATCHPOINT_Y = 1.00000000e+00;
+    const double DOUBLE_EQUALITY_BOUND = 1e-10;
 
 }
