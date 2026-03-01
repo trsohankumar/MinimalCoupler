@@ -213,6 +213,11 @@ int ParticipantImplementation::getMeshDimensions(precice::string_view meshName) 
     return (std::string(_providedMesh.getMeshName()) == std::string(meshName)) ?  _providedMesh.getMeshDimensions(): _receivedMesh.getMeshDimensions();
 }
 
+int ParticipantImplementation::getDataDimensions(precice::string_view meshName, precice::string_view dataName) const
+{
+    return (std::string(_providedMesh.getMeshName()) == std::string(meshName)) ? _providedMesh.getMeshDimensions() : _receivedMesh.getMeshDimensions();
+}
+
 /*
 Function is called by Fluid to recv vertices from Solid
 */
@@ -483,6 +488,11 @@ void ParticipantImplementation::advance(double computedTimeStepSize)
 bool ParticipantImplementation::isCouplingOngoing()
 {
     return getCurrentTime() < _maxTime;
+}
+
+bool ParticipantImplementation::requiresInitialData()
+{
+    return _providedMesh.requiresInitialData();
 }
 
 bool ParticipantImplementation::requiresWritingCheckpoint()

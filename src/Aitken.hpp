@@ -12,9 +12,9 @@ class Aitken
 {
 public:
     Aitken ();
-    void checkConvergence(bool isConverged);
+    void updateConvergence(bool isConverged);
     bool isConverged() const;
-    std::vector<double> getRelaxedData();
+    std::vector<double> getRelaxedData() const;
     void setRelaxedData(std::vector<double> data);
     void initialize(std::vector<double> initData);
     void resetIteration();
@@ -23,9 +23,9 @@ public:
     void computeAitkenRelaxedOutput(std::vector<double> &outputData);
     double getResidualForLog() const;
     int getIterationNumber() const;
+    bool checkConvergence(std::vector<double> & newData);
 
 private:
-    double _initialRelaxation;
     double _convergenceTolerance;
     bool _converged;
     int _maxIterations;

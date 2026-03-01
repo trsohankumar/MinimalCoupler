@@ -1,5 +1,6 @@
 #pragma once
 #include "Point.hpp"
+#include "constants.hpp"
 #include "precice/types.hpp"
 #include <map>
 #include <string>
@@ -50,6 +51,8 @@ class Mesh
 
     bool checkIfVertexIdExists(const int vertexId) const;
 
+    bool requiresInitialData() const;
+
     void getDataForVertexId(precice::string_view dataName, precice::span<const precice::VertexID> vertexId, precice::span<double> values, int timeWindow) const;
 
   private:
@@ -59,6 +62,7 @@ class Mesh
     int _dimensions;
     std::unordered_map<std::string, std::map<int, std::vector<double>>> _dataFields;
     MeshType _meshType;
+    bool _requiresInitialData = Constants::REQUIRES_INITIAL_DATA;
 };
 
 } // namespace MinimalCoupler

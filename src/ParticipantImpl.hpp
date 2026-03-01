@@ -24,6 +24,7 @@ class ParticipantImplementation
 
     // Mesh methods
     int getMeshDimensions(precice::string_view meshName) const;
+    int getDataDimensions(precice::string_view meshName, precice::string_view dataName) const;
 
     void setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates,
                          precice::span<int> ids);
@@ -45,6 +46,7 @@ class ParticipantImplementation
 
     // Status queries
     bool isCouplingOngoing();
+    bool requiresInitialData();
     bool requiresWritingCheckpoint();
     bool requiresReadingCheckpoint();
 

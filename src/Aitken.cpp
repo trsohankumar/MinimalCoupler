@@ -5,17 +5,16 @@ namespace MinimalCoupler
 {
 
 Aitken::Aitken ()
-    : _initialRelaxation(Constants::INITIAL_RELAXATION), _convergenceTolerance(Constants::CONVERGENCE_TOLERANCE), _converged(false), _maxIterations(Constants::MAX_ITERATIONS), _omega(0.0), _iterationNumber(0)
+    : _convergenceTolerance(Constants::CONVERGENCE_TOLERANCE), _converged(false), _maxIterations(Constants::MAX_ITERATIONS), _omega(Constants::INITIAL_RELAXATION), _iterationNumber(0)
 {
 }
 
-void Aitken::checkConvergence(bool isConverged)
+void Aitken::updateConvergence(bool isConverged)
 {
-
     if (isConverged)
     {
         _converged = true;
-        MINIMALCOUPLER_INFO("Aitken converged after iteration:", _iterationNumber);
+        MINIMALCOUPLER_INFO("Aitken converged after iteration: ", _iterationNumber);
     }
     else if (_iterationNumber >= _maxIterations)
     {
@@ -33,6 +32,9 @@ bool Aitken::isConverged() const
     return _converged;
 }
 
+/*
+Function computes the residuals by subtracting newData from the old one
+*/
 void Aitken::computeResiduals(std::vector<double> &newData)
 {
     _currentResiduals.clear();
@@ -44,26 +46,21 @@ void Aitken::computeResiduals(std::vector<double> &newData)
     }
 }
 
-std::vector<double> Aitken::getRelaxedData()
+std::vector<double> Aitken::getRelaxedData() const
 {
     return _data;
 }
 
+/*
+The function updates the relaxation factor omega depending on the iteration number
+*/
 void Aitken::updateRelaxation()
 {
     if (_iterationNumber == 0)
     {
-        if (_omega == 0.0)
-        {
-            // Very first window: no previous omega to preserve
-            _omega = _initialRelaxation;
-        }
-        else
-        {
-            // preserve sign of previous omega, cap magnitude at initialRelaxation
-            double sign = (_omega < 0.0) ? -1.0 : 1.0;
-            _omega = sign * std::min(std::abs(_omega), _initialRelaxation);
-        }
+        // I always want omega to have always start at a value when a new iteration starts
+        double sign = (_omega < 0.0) ? -1.0 : 1.0;
+        _omega = sign * std::min(std::abs(_omega), Constants::INITIAL_RELAXATION);
         MINIMALCOUPLER_INFO("Using initial relaxation for iteration 0, omega:", _omega);
     }
     else
@@ -83,21 +80,33 @@ void Aitken::updateRelaxation()
         MINIMALCOUPLER_INFO("Updated relaxation from ", prevOmega, " to ", _omega);
     }
 }
-void Aitken::computeAitkenRelaxedOutput(std::vector<double> &newData)
+
+/*
+Function computes the norm difference between old and new data
+It then checks convergence by check if norm differnce is lesser that newDataNorm * tolerance
+*/
+bool Aitken::checkConvergence(std::vector<double> & newData)
 {
-    MINIMALCOUPLER_INFO("Running Aitken for iteration number: ", _iterationNumber);
-
-    _converged = false;
-    computeResiduals(newData);
-
     // Compute L2 norm of new solver output for relative convergence measure
     double diffNorm = Utils::computeVectorNorm(Utils::vectorDifference(newData, _data));
     double newDataNorm = Utils::computeVectorNorm(newData);
 
     _residualForLog = (newDataNorm > 0.0) ? diffNorm / newDataNorm : 0.0;
-    bool isConverged = diffNorm <= newDataNorm * _convergenceTolerance;
+    return diffNorm <= (newDataNorm * _convergenceTolerance);
+}
 
-    checkConvergence(isConverged);
+/*
+Function receives new solver data as input and does the following:
+- computes the residuals from new and old data
+- if converged updates the data else applys relaxtion to the data from the previous iteration
+*/
+void Aitken::computeAitkenRelaxedOutput(std::vector<double> &newData)
+{
+    MINIMALCOUPLER_INFO("Running Aitken for iteration number: ", _iterationNumber);
+
+    computeResiduals(newData);
+
+    updateConvergence(checkConvergence(newData));
 
     if (_converged) 
     {
@@ -121,6 +130,7 @@ void Aitken::computeAitkenRelaxedOutput(std::vector<double> &newData)
 void Aitken::resetIteration()
 {
     _iterationNumber = 0;
+    _converged = false;
 }
 
 void Aitken::setRelaxedData(std::vector<double> data)

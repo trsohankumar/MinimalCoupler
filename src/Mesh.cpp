@@ -127,4 +127,9 @@ void Mesh::getDataForVertexId(precice::string_view dataName, precice::span<const
     }
 }
 
+bool Mesh::requiresInitialData() const
+{
+    return _requiresInitialData;
+}
+
 } // namespace MinimalCoupler

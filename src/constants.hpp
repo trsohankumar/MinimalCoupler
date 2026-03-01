@@ -10,8 +10,9 @@ namespace MinimalCoupler::Constants{
     const int SERVER_PORT = 5001;
     const double CONVERGENCE_TOLERANCE = 5e-3;
 
-    const double WATCHPOINT_X = -8.33333334e-03;
-    const double WATCHPOINT_Y = 1.00000000e+00;
+    const double WATCHPOINT_X = 0.0;
+    const double WATCHPOINT_Y = 1.0;
     const double DOUBLE_EQUALITY_BOUND = 1e-10;
+    const bool REQUIRES_INITIAL_DATA = false;
 
 }

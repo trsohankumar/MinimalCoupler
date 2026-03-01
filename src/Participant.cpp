@@ -6,13 +6,11 @@
 namespace precice
 {
 
-Participant::Participant(precice::string_view participantName, precice::string_view configurationFileName,
-                         int solverProcessIndex, int solverProcessSize)
+Participant::Participant(precice::string_view participantName, precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize)
 {
     if (participantName == "Solid" || participantName == "Fluid")
     {
-        _impl = std::make_unique<MinimalCoupler::ParticipantImplementation>(
-            std::move(participantName), std::move(configurationFileName), solverProcessIndex, solverProcessSize);
+        _impl = std::make_unique<MinimalCoupler::ParticipantImplementation>(std::move(participantName), std::move(configurationFileName), solverProcessIndex, solverProcessSize);
     }
     else
     {
@@ -35,15 +33,12 @@ void Participant::setMeshVertices(precice::string_view meshName, precice::span<c
     _impl->setMeshVertices(meshName, coordinates, ids);
 }
 
-void Participant::readData(precice::string_view meshName, precice::string_view dataName,
-                           precice::span<const precice::VertexID> ids, double relativeReadTime,
-                           precice::span<double> values) const
+void Participant::readData(precice::string_view meshName, precice::string_view dataName,precice::span<const precice::VertexID> ids, double relativeReadTime, precice::span<double> values) const
 {
     _impl->readData(meshName, dataName, ids, relativeReadTime, values);
 }
 
-void Participant::writeData(precice::string_view meshName, precice::string_view dataName,
-                            precice::span<const VertexID> ids, precice::span<const double> values)
+void Participant::writeData(precice::string_view meshName, precice::string_view dataName,precice::span<const VertexID> ids, precice::span<const double> values)
 {
     _impl->writeData(meshName, dataName, ids, values);
 }
@@ -70,8 +65,7 @@ bool Participant::isCouplingOngoing() const
 
 bool Participant::requiresInitialData()
 {
-    std::cout << "Not implemented: requiresInitialData" << std::endl;
-    return false;
+    return _impl->requiresInitialData();
 }
 
 bool Participant::requiresWritingCheckpoint()
@@ -100,8 +94,7 @@ void Participant::stopLastProfilingSection()
 }
 
 // Constructor with MPI communicator
-Participant::Participant(precice::string_view participantName, precice::string_view configurationFileName,
-                         int solverProcessIndex, int solverProcessSize, void *communicator)
+Participant::Participant(precice::string_view participantName, precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize, void *communicator)
 {
     std::cout << "Not implemented: Participant MPI constructor" << std::endl;
     throw std::runtime_error("MPI communicator constructor not implemented");
@@ -110,8 +103,7 @@ Participant::Participant(precice::string_view participantName, precice::string_v
 // Status query methods
 int Participant::getDataDimensions(precice::string_view meshName, precice::string_view dataName) const
 {
-    std::cout << "Not implemented: getDataDimensions" << std::endl;
-    return 2;
+    return _impl->getDataDimensions(meshName, dataName);
 }
 
 bool Participant::isTimeWindowComplete() const
