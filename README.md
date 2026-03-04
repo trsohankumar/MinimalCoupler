@@ -1,17 +1,17 @@
 # MinimalCoupler
 
-A minimal coupling library implementation that implements the preCICE coupling API standard.
-It couples the simulation between two participants fluid and solid. The type of coupling carried out is a serial implicit coupling accelerated with aitken relaxation. Mapping between vertices from solid to fluid are carried out Nearest Neighbor mapping.
-
-## Usage
-
-As the library extends the preCICE API, it can be utilized in the preCICE software stack in place of the preCICE library. To this end to use the project with any coupling simulation where preCICE can be use simply load the library using LD_PRELOAD while executing the coupling script.
+A minimal coupling library implementation that exposes the same API as preCICE.
+The following configuration is hard-coded into this library:
+- Two participants named Fluid and Solid with meshes Fluid-mesh and Solid-mesh respectively.
+- Two data vectors for Force and Displacement.
+- Vertex mapping carried out using nearest-neighbor mapping.
+- Uses serial-implicit coupling with Aitken underrelaxation.
 
 ## Build Instructions
 
 ### Prerequisites
 
-- Cmake 3.22 or higher
+- CMake 3.22 or higher
 - C++ compiler with C++20 support
 
 ### Building the Library
@@ -33,5 +33,11 @@ make
 ```
 
 ### Build Output
-The buld process generates:
+The build process generates:
 - `libminimalCoupler.so.3` - The shared library
+
+### Usage Instructions
+The library is developed to couple the solvers in the perpendicular-flaps tutorials of preCICE. Run the simulations using library preloading:
+```bash
+LD_PRELOAD=/path/to/libminimalCoupler.so.3 ./run.sh
+```
