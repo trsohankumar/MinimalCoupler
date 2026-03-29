@@ -22,7 +22,7 @@ jobs:
 
             - name: Build solverdummy
               run: |
-                cd test
+                cd tests
                 mkdir build && cd build
                 cmake .. -DCMAKE_PREFIX_PATH=${{ github.workspace }}/install
                 make
