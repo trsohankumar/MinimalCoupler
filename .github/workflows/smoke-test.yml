@@ -11,7 +11,7 @@ jobs:
 
             - name: Configure test parameters
               run: |
-                sed -i 's/TIME_WINDOW_SIZE = 0.01/TIME_WINDOW_SIZE = 0.2/' src/constants.hpp
+                sed -i 's/TIME_WINDOW_SIZE .*/TIME_WINDOW_SIZE      = 0.2;/' src/constants.hpp
 
             - name: Build and install library
               run: | 
