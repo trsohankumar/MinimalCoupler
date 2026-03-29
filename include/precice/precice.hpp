@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Participant.hpp"
+#include "precice/Participant.hpp"
 #include <string>
 
 namespace precice

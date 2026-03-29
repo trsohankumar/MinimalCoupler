@@ -4,8 +4,7 @@
 #include<math.h>
 #include <iostream>
 #include <sys/socket.h>
-
-#include "Point.hpp"
+#include "Mesh.hpp"
 
 namespace MinimalCoupler::Utils
 {

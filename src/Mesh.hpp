@@ -1,5 +1,4 @@
 #pragma once
-#include "Point.hpp"
 #include "constants.hpp"
 #include "precice/types.hpp"
 #include <map>
@@ -13,6 +12,13 @@ enum class MeshType
 {
     PROVIDED,
     RECEIVED
+};
+
+struct Point
+{
+    int id{};
+    double x{};
+    double y{};
 };
 
 class Mesh

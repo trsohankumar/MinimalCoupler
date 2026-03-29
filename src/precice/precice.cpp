@@ -1,4 +1,4 @@
-#include "precice.hpp"
+#include "precice/precice.hpp"
 
 namespace precice
 {

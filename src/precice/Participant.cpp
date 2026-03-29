@@ -1,4 +1,6 @@
-#include "Participant.hpp"
+#include "precice/Participant.hpp"
+
+#include "../ParticipantImpl.hpp"
 
 #include <iostream>
 #include <stdexcept>

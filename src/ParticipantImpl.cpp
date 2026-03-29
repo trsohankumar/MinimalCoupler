@@ -9,7 +9,6 @@
 
 #include "ParticipantImpl.hpp"
 
-#include "Point.hpp"
 #include "Utils.hpp"
 #include "logger.hpp"
 #include "constants.hpp"

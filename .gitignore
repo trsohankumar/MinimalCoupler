@@ -1,4 +1,5 @@
-/build
+*/build
 /install
 /examples
 run.sh
+*.log

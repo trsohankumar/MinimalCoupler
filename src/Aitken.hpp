@@ -4,6 +4,7 @@
 
 #include "logger.hpp"
 #include "constants.hpp"
+#include "Mesh.hpp"
 #include "Utils.hpp"
 
 namespace MinimalCoupler

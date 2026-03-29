@@ -1,10 +1,12 @@
 #pragma once
 
-#include "ParticipantImpl.hpp"
-#include "precice/types.hpp"
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "types.hpp"
+
+namespace MinimalCoupler {class ParticipantImplementation; }
 
 namespace precice
 {
