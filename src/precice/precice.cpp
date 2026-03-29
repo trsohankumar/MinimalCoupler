@@ -1,7 +1,6 @@
 #include "precice/precice.hpp"
 
-namespace precice
-{
+namespace precice {
 
 std::string getVersionInformation()
 {

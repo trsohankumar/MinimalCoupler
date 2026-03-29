@@ -30,5 +30,7 @@ jobs:
             - name: Run smoke test
               run: |
                  cd tests/build
-                 ./solverdummy Fluid &
-                 ./solverdummy Solid
+                 ./solverdummy Fluid > fluid.log 2>&1 &
+                 ./solverdummy Solid > solid.log 2>&1
+                 grep -q "Closing C++ solver dummy" fluid.log
+                 grep -q "Closing C++ solver dummy" solid.logj

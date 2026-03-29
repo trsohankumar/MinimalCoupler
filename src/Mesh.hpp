@@ -6,24 +6,17 @@
 #include <unordered_map>
 #include <vector>
 
-namespace MinimalCoupler
-{
-enum class MeshType
-{
-    PROVIDED,
-    RECEIVED
+namespace MinimalCoupler {
+enum class MeshType { PROVIDED, RECEIVED };
+
+struct Point {
+    int    id {};
+    double x {};
+    double y {};
 };
 
-struct Point
-{
-    int id{};
-    double x{};
-    double y{};
-};
-
-class Mesh
-{
-  public:
+class Mesh {
+public:
     Mesh();
 
     precice::string_view getMeshName() const;
@@ -32,9 +25,9 @@ class Mesh
 
     void setMeshVertices(std::vector<Point> vertices);
 
-    void setVertexMapping(std::vector<Point> &&vertexMapping);
+    void setVertexMapping(std::vector<Point>&& vertexMapping);
 
-    void addDataToMesh(const std::string &dataName, int timeWindow, std::vector<double> &&inputData = {});
+    void addDataToMesh(const std::string& dataName, int timeWindow, std::vector<double>&& inputData = {});
 
     int getMeshDimensions() const;
 
@@ -44,30 +37,35 @@ class Mesh
 
     void allocateDataFields();
 
-    const std::vector<Point> &getMeshVertices() const;
-    const std::vector<Point> &getVertexMapping() const;
+    const std::vector<Point>& getMeshVertices() const;
+    const std::vector<Point>& getVertexMapping() const;
 
-    std::vector<double> &getDataField(const std::string &dataName, int timeWindow);
+    std::vector<double>& getDataField(const std::string& dataName, int timeWindow);
 
-    bool checkIfDataFieldExists(const std::string &dataName) const;
+    bool checkIfDataFieldExists(const std::string& dataName) const;
 
-    bool checkIfTimeWindowExists(const std::string &dataName, int timeWindow) const;
+    bool checkIfTimeWindowExists(const std::string& dataName, int timeWindow) const;
 
-    std::vector<int> getAvailableTimeWindows(const std::string &dataName) const;
+    std::vector<int> getAvailableTimeWindows(const std::string& dataName) const;
 
     bool checkIfVertexIdExists(const int vertexId) const;
 
     bool requiresInitialData() const;
 
-    void getDataForVertexId(precice::string_view dataName, precice::span<const precice::VertexID> vertexId, precice::span<double> values, int timeWindow) const;
+    void getDataForVertexId(
+        precice::string_view                   dataName,
+        precice::span<const precice::VertexID> vertexId,
+        precice::span<double>                  values,
+        int                                    timeWindow
+    ) const;
 
-  private:
-    std::string _meshName;
-    std::vector<Point> _vertices;
-    std::vector<Point> _vertexMapping;
-    int _dimensions;
+private:
+    std::string                                                         _meshName;
+    std::vector<Point>                                                  _vertices;
+    std::vector<Point>                                                  _vertexMapping;
+    int                                                                 _dimensions;
     std::unordered_map<std::string, std::map<int, std::vector<double>>> _dataFields;
-    MeshType _meshType;
+    MeshType                                                            _meshType;
     bool _requiresInitialData = Constants::REQUIRES_INITIAL_DATA;
 };
 

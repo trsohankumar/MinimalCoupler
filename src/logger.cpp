@@ -1,9 +1,8 @@
 #include "logger.hpp"
 
-namespace MinimalCoupler
-{
+namespace MinimalCoupler {
 
-Logger &Logger::getInstance()
+Logger& Logger::getInstance()
 {
     static Logger instance;
     return instance;
@@ -14,31 +13,29 @@ void Logger::setLogLevel(LogLevel level)
     minLevel_ = level;
 }
 
-void Logger::setLogFile(const std::string &filename)
+void Logger::setLogFile(const std::string& filename)
 {
-    if (logFile_.is_open())
-    {
+    if (logFile_.is_open()) {
         logFile_.close();
     }
     logFile_.open(filename);
 }
 
-Logger::Logger() : minLevel_(LogLevel::INFO)
+Logger::Logger()
+    : minLevel_(LogLevel::INFO)
 {
 }
 
 Logger::~Logger()
 {
-    if (logFile_.is_open())
-    {
+    if (logFile_.is_open()) {
         logFile_.close();
     }
 }
 
 std::string Logger::levelStr(LogLevel level) const
 {
-    switch (level)
-    {
+    switch (level) {
     case LogLevel::DEBUG:
         return "DEBUG";
     case LogLevel::INFO:

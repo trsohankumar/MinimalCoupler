@@ -5,42 +5,60 @@
 #include <iostream>
 #include <stdexcept>
 
-namespace precice
-{
+namespace precice {
 
-Participant::Participant(precice::string_view participantName, precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize)
+Participant::Participant(
+    precice::string_view participantName,
+    precice::string_view configurationFileName,
+    int                  solverProcessIndex,
+    int                  solverProcessSize
+)
 {
-    if (participantName == "Solid" || participantName == "Fluid")
-    {
-        _impl = std::make_unique<MinimalCoupler::ParticipantImplementation>(std::move(participantName), std::move(configurationFileName), solverProcessIndex, solverProcessSize);
-    }
-    else
-    {
+    if (participantName == "Solid" || participantName == "Fluid") {
+        _impl = std::make_unique<MinimalCoupler::ParticipantImplementation>(
+            std::move(participantName),
+            std::move(configurationFileName),
+            solverProcessIndex,
+            solverProcessSize
+        );
+    } else {
         throw std::invalid_argument("Unknown participant name:" + std::string(participantName));
     }
 }
 
-Participant::~Participant()
-{
-}
+Participant::~Participant() { }
 
 int Participant::getMeshDimensions(precice::string_view meshName) const
 {
     return _impl->getMeshDimensions(meshName);
 }
 
-void Participant::setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates,
-                                  precice::span<VertexID> ids)
+void Participant::setMeshVertices(
+    precice::string_view        meshName,
+    precice::span<const double> coordinates,
+    precice::span<VertexID>     ids
+)
 {
     _impl->setMeshVertices(meshName, coordinates, ids);
 }
 
-void Participant::readData(precice::string_view meshName, precice::string_view dataName,precice::span<const precice::VertexID> ids, double relativeReadTime, precice::span<double> values) const
+void Participant::readData(
+    precice::string_view                   meshName,
+    precice::string_view                   dataName,
+    precice::span<const precice::VertexID> ids,
+    double                                 relativeReadTime,
+    precice::span<double>                  values
+) const
 {
     _impl->readData(meshName, dataName, ids, relativeReadTime, values);
 }
 
-void Participant::writeData(precice::string_view meshName, precice::string_view dataName,precice::span<const VertexID> ids, precice::span<const double> values)
+void Participant::writeData(
+    precice::string_view          meshName,
+    precice::string_view          dataName,
+    precice::span<const VertexID> ids,
+    precice::span<const double>   values
+)
 {
     _impl->writeData(meshName, dataName, ids, values);
 }
@@ -96,7 +114,13 @@ void Participant::stopLastProfilingSection()
 }
 
 // Constructor with MPI communicator
-Participant::Participant(precice::string_view participantName, precice::string_view configurationFileName, int solverProcessIndex, int solverProcessSize, void *communicator)
+Participant::Participant(
+    precice::string_view participantName,
+    precice::string_view configurationFileName,
+    int                  solverProcessIndex,
+    int                  solverProcessSize,
+    void*                communicator
+)
 {
     std::cout << "Not implemented: Participant MPI constructor" << std::endl;
     throw std::runtime_error("MPI communicator constructor not implemented");
@@ -127,7 +151,7 @@ void Participant::resetMesh(precice::string_view meshName)
 
 VertexID Participant::setMeshVertex(precice::string_view meshName, precice::span<const double> position)
 {
-    std::cout<<"Not Implemented" <<std::endl;
+    std::cout << "Not Implemented" << std::endl;
     return 0; // TODO: implement properly
 }
 
@@ -157,8 +181,13 @@ void Participant::setMeshTriangles(precice::string_view meshName, precice::span<
     std::cout << "Not implemented: setMeshTriangles" << std::endl;
 }
 
-void Participant::setMeshQuad(precice::string_view meshName, VertexID first, VertexID second, VertexID third,
-                              VertexID fourth)
+void Participant::setMeshQuad(
+    precice::string_view meshName,
+    VertexID             first,
+    VertexID             second,
+    VertexID             third,
+    VertexID             fourth
+)
 {
     std::cout << "Not implemented: setMeshQuad" << std::endl;
 }
@@ -168,8 +197,13 @@ void Participant::setMeshQuads(precice::string_view meshName, precice::span<cons
     std::cout << "Not implemented: setMeshQuads" << std::endl;
 }
 
-void Participant::setMeshTetrahedron(precice::string_view meshName, VertexID first, VertexID second, VertexID third,
-                                     VertexID fourth)
+void Participant::setMeshTetrahedron(
+    precice::string_view meshName,
+    VertexID             first,
+    VertexID             second,
+    VertexID             third,
+    VertexID             fourth
+)
 {
     std::cout << "Not implemented: setMeshTetrahedron" << std::endl;
 }
@@ -186,21 +220,33 @@ bool Participant::requiresGradientDataFor(precice::string_view meshName, precice
     return false;
 }
 
-void Participant::writeGradientData(precice::string_view meshName, precice::string_view dataName,
-                                    precice::span<const VertexID> ids, precice::span<const double> gradients)
+void Participant::writeGradientData(
+    precice::string_view          meshName,
+    precice::string_view          dataName,
+    precice::span<const VertexID> ids,
+    precice::span<const double>   gradients
+)
 {
     std::cout << "Not implemented: writeGradientData" << std::endl;
 }
 
-void Participant::mapAndReadData(precice::string_view fromMeshName, precice::string_view dataName,
-                                 precice::span<const double> positions, double relativeReadTime,
-                                 precice::span<double> values) const
+void Participant::mapAndReadData(
+    precice::string_view        fromMeshName,
+    precice::string_view        dataName,
+    precice::span<const double> positions,
+    double                      relativeReadTime,
+    precice::span<double>       values
+) const
 {
     std::cout << "Not implemented: mapAndReadData" << std::endl;
 }
 
-void Participant::writeAndMapData(precice::string_view meshName, precice::string_view dataName,
-                                  precice::span<const double> positions, precice::span<const double> values)
+void Participant::writeAndMapData(
+    precice::string_view        meshName,
+    precice::string_view        dataName,
+    precice::span<const double> positions,
+    precice::span<const double> values
+)
 {
     std::cout << "Not implemented: writeAndMapData" << std::endl;
 }
@@ -211,8 +257,11 @@ void Participant::setMeshAccessRegion(precice::string_view meshName, precice::sp
     std::cout << "Not implemented: setMeshAccessRegion" << std::endl;
 }
 
-void Participant::getMeshVertexIDsAndCoordinates(precice::string_view meshName, precice::span<VertexID> ids,
-                                                 precice::span<double> coordinates) const
+void Participant::getMeshVertexIDsAndCoordinates(
+    precice::string_view    meshName,
+    precice::span<VertexID> ids,
+    precice::span<double>   coordinates
+) const
 {
     std::cout << "Not implemented: getMeshVertexIDsAndCoordinates" << std::endl;
 }

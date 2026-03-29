@@ -5,30 +5,22 @@
 #include <sstream>
 #include <string>
 
-namespace MinimalCoupler
-{
+namespace MinimalCoupler {
 
-enum class LogLevel
-{
-    DEBUG = 0,
-    INFO = 1,
-    WARNING = 2,
-    ERROR = 3
-};
+enum class LogLevel { DEBUG = 0, INFO = 1, WARNING = 2, ERROR = 3 };
 
-class Logger
-{
-  public:
-    static Logger &getInstance();
+class Logger {
+public:
+    static Logger& getInstance();
 
-    Logger(const Logger &) = delete;
-    Logger &operator=(const Logger &) = delete;
+    Logger(const Logger&)            = delete;
+    Logger& operator=(const Logger&) = delete;
 
     void setLogLevel(LogLevel level);
 
-    void setLogFile(const std::string &filename);
+    void setLogFile(const std::string& filename);
 
-    template <typename... Args> void console(LogLevel level, Args &&...args) const
+    template <typename... Args> void console(LogLevel level, Args&&... args) const
     {
         if (level < minLevel_)
             return;
@@ -37,17 +29,14 @@ class Logger
         oss << "[" << levelStr(level) << "] ";
         (oss << ... << args);
 
-        if (level >= LogLevel::ERROR)
-        {
+        if (level >= LogLevel::ERROR) {
             std::cerr << oss.str() << std::endl;
-        }
-        else
-        {
+        } else {
             std::cout << oss.str() << std::endl;
         }
     }
 
-    template <typename... Args> void file(LogLevel level, Args &&...args)
+    template <typename... Args> void file(LogLevel level, Args&&... args)
     {
         if (!logFile_.is_open() || level < minLevel_)
             return;
@@ -60,14 +49,14 @@ class Logger
         logFile_.flush();
     }
 
-  private:
+private:
     Logger();
 
     ~Logger();
 
     std::string levelStr(LogLevel level) const;
 
-    LogLevel minLevel_;
+    LogLevel      minLevel_;
     std::ofstream logFile_;
 };
 

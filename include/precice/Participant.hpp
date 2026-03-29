@@ -6,19 +6,28 @@
 
 #include "types.hpp"
 
-namespace MinimalCoupler {class ParticipantImplementation; }
+namespace MinimalCoupler {
+class ParticipantImplementation;
+}
 
-namespace precice
-{
-class Participant
-{
-  public:
+namespace precice {
+class Participant {
+public:
     // Construction and Configuration
-    Participant(precice::string_view participantName, precice::string_view configurationFileName,
-                int solverProcessIndex, int solverProcessSize);
+    Participant(
+        precice::string_view participantName,
+        precice::string_view configurationFileName,
+        int                  solverProcessIndex,
+        int                  solverProcessSize
+    );
 
-    Participant(precice::string_view participantName, precice::string_view configurationFileName,
-                int solverProcessIndex, int solverProcessSize, void *communicator);
+    Participant(
+        precice::string_view participantName,
+        precice::string_view configurationFileName,
+        int                  solverProcessIndex,
+        int                  solverProcessSize,
+        void*                communicator
+    );
 
     ~Participant();
 
@@ -42,8 +51,11 @@ class Participant
 
     int getMeshVertexSize(precice::string_view meshName) const;
 
-    void setMeshVertices(precice::string_view meshName, precice::span<const double> coordinates,
-                         precice::span<VertexID> ids);
+    void setMeshVertices(
+        precice::string_view        meshName,
+        precice::span<const double> coordinates,
+        precice::span<VertexID>     ids
+    );
 
     void setMeshEdge(precice::string_view meshName, VertexID first, VertexID second);
 
@@ -57,8 +69,8 @@ class Participant
 
     void setMeshQuads(precice::string_view meshName, precice::span<const VertexID> ids);
 
-    void setMeshTetrahedron(precice::string_view meshName, VertexID first, VertexID second, VertexID third,
-                            VertexID fourth);
+    void
+    setMeshTetrahedron(precice::string_view meshName, VertexID first, VertexID second, VertexID third, VertexID fourth);
 
     void setMeshTetrahedra(precice::string_view meshName, precice::span<const VertexID> ids);
 
@@ -67,27 +79,51 @@ class Participant
 
     bool requiresGradientDataFor(precice::string_view meshName, precice::string_view dataName) const;
 
-    void readData(precice::string_view meshName, precice::string_view dataName, precice::span<const VertexID> ids,
-                  double relativeReadTime, precice::span<double> values) const;
+    void readData(
+        precice::string_view          meshName,
+        precice::string_view          dataName,
+        precice::span<const VertexID> ids,
+        double                        relativeReadTime,
+        precice::span<double>         values
+    ) const;
 
-    void writeData(precice::string_view meshName, precice::string_view dataName, precice::span<const VertexID> ids,
-                   precice::span<const double> values);
+    void writeData(
+        precice::string_view          meshName,
+        precice::string_view          dataName,
+        precice::span<const VertexID> ids,
+        precice::span<const double>   values
+    );
 
-    void writeGradientData(precice::string_view meshName, precice::string_view dataName,
-                           precice::span<const VertexID> ids, precice::span<const double> gradients);
+    void writeGradientData(
+        precice::string_view          meshName,
+        precice::string_view          dataName,
+        precice::span<const VertexID> ids,
+        precice::span<const double>   gradients
+    );
 
-    void mapAndReadData(precice::string_view fromMeshName, precice::string_view dataName,
-                        precice::span<const double> positions, double relativeReadTime,
-                        precice::span<double> values) const;
+    void mapAndReadData(
+        precice::string_view        fromMeshName,
+        precice::string_view        dataName,
+        precice::span<const double> positions,
+        double                      relativeReadTime,
+        precice::span<double>       values
+    ) const;
 
-    void writeAndMapData(precice::string_view meshName, precice::string_view dataName,
-                         precice::span<const double> positions, precice::span<const double> values);
+    void writeAndMapData(
+        precice::string_view        meshName,
+        precice::string_view        dataName,
+        precice::span<const double> positions,
+        precice::span<const double> values
+    );
 
     // Direct access
     void setMeshAccessRegion(precice::string_view meshName, precice::span<const double> boundingBox) const;
 
-    void getMeshVertexIDsAndCoordinates(precice::string_view meshName, precice::span<VertexID> ids,
-                                        precice::span<double> coordinates) const;
+    void getMeshVertexIDsAndCoordinates(
+        precice::string_view    meshName,
+        precice::span<VertexID> ids,
+        precice::span<double>   coordinates
+    ) const;
 
     // Steering methods
     void initialize();
@@ -105,7 +141,7 @@ class Participant
 
     void stopLastProfilingSection();
 
-  private:
+private:
     std::unique_ptr<MinimalCoupler::ParticipantImplementation> _impl;
 };
 } // namespace precice
