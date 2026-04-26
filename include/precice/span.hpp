@@ -33,6 +33,4 @@ public:
         return os << std::string_view(s.data(), s.size());
     }
 };
-using VertexID    = int;
-using string_view = span<const char>;
 } // namespace precice

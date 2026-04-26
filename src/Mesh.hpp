@@ -9,12 +9,26 @@
 namespace MinimalCoupler {
 enum class MeshType { PROVIDED, RECEIVED };
 
+/**
+ * @brief The structure represents a point 
+ * 
+ * This point is exchanged during coupling. 
+ * The vertices of the mesh are made up of points which are of this struct type
+ */
 struct Point {
     int    id {};
     double x {};
     double y {};
 };
 
+/**
+ * @brief The class represents a coupling mesh abstraction
+ * 
+ * Seperates the mesh abstaraction from the participant so 
+ * that the mulitple data vectors can be tracked without the
+ * participant needing to maintain all this information 
+ * itself.
+ */
 class Mesh {
 public:
     Mesh();
@@ -34,8 +48,6 @@ public:
     void setMeshDimensions(int dimensions);
 
     size_t getVertexCount() const;
-
-    void allocateDataFields();
 
     const std::vector<Point>& getMeshVertices() const;
     const std::vector<Point>& getVertexMapping() const;

@@ -2,8 +2,17 @@
 
 #include "../ParticipantImpl.hpp"
 
-#include <iostream>
+#include "../logger.hpp"
 #include <stdexcept>
+
+namespace precice::impl {
+
+class ParticipantImpl : public MinimalCoupler::ParticipantImplementation {
+public:
+    using MinimalCoupler::ParticipantImplementation::ParticipantImplementation;
+};
+
+} // namespace precice::impl
 
 namespace precice {
 
@@ -15,9 +24,9 @@ Participant::Participant(
 )
 {
     if (participantName == "Solid" || participantName == "Fluid") {
-        _impl = std::make_unique<MinimalCoupler::ParticipantImplementation>(
-            std::move(participantName),
-            std::move(configurationFileName),
+        _impl = std::make_unique<impl::ParticipantImpl>(
+            participantName,
+            configurationFileName,
             solverProcessIndex,
             solverProcessSize
         );
@@ -105,12 +114,12 @@ double Participant::getMaxTimeStepSize() const
 
 void Participant::startProfilingSection(precice::string_view name)
 {
-    std::cout << "Not implemented: startProfilingSection" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: startProfilingSection");
 }
 
 void Participant::stopLastProfilingSection()
 {
-    std::cout << "Not implemented: stopLastProfilingSection" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: stopLastProfilingSection");
 }
 
 // Constructor with MPI communicator
@@ -122,7 +131,7 @@ Participant::Participant(
     void*                communicator
 )
 {
-    std::cout << "Not implemented: Participant MPI constructor" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: Participant MPI constructor");
     throw std::runtime_error("MPI communicator constructor not implemented");
 }
 
@@ -140,45 +149,45 @@ bool Participant::isTimeWindowComplete() const
 // Mesh topology methods
 bool Participant::requiresMeshConnectivityFor(precice::string_view meshName) const
 {
-    std::cout << "Not implemented: requiresMeshConnectivityFor" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: requiresMeshConnectivityFor");
     return false;
 }
 
 void Participant::resetMesh(precice::string_view meshName)
 {
-    std::cout << "Not implemented: resetMesh" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: resetMesh");
 }
 
 VertexID Participant::setMeshVertex(precice::string_view meshName, precice::span<const double> position)
 {
-    std::cout << "Not Implemented" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: setMeshVertex");
     return 0; // TODO: implement properly
 }
 
 int Participant::getMeshVertexSize(precice::string_view meshName) const
 {
-    std::cout << "Not implemented: getMeshVertexSize" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: getMeshVertexSize");
     return 0;
 }
 
 void Participant::setMeshEdge(precice::string_view meshName, VertexID first, VertexID second)
 {
-    std::cout << "Not implemented: setMeshEdge" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: setMeshEdge");
 }
 
 void Participant::setMeshEdges(precice::string_view meshName, precice::span<const VertexID> ids)
 {
-    std::cout << "Not implemented: setMeshEdges" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: setMeshEdges");
 }
 
 void Participant::setMeshTriangle(precice::string_view meshName, VertexID first, VertexID second, VertexID third)
 {
-    std::cout << "Not implemented: setMeshTriangle" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: setMeshTriangle");
 }
 
 void Participant::setMeshTriangles(precice::string_view meshName, precice::span<const VertexID> ids)
 {
-    std::cout << "Not implemented: setMeshTriangles" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: setMeshTriangles");
 }
 
 void Participant::setMeshQuad(
@@ -189,12 +198,12 @@ void Participant::setMeshQuad(
     VertexID             fourth
 )
 {
-    std::cout << "Not implemented: setMeshQuad" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: setMeshQuad");
 }
 
 void Participant::setMeshQuads(precice::string_view meshName, precice::span<const VertexID> ids)
 {
-    std::cout << "Not implemented: setMeshQuads" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: setMeshQuads");
 }
 
 void Participant::setMeshTetrahedron(
@@ -205,18 +214,18 @@ void Participant::setMeshTetrahedron(
     VertexID             fourth
 )
 {
-    std::cout << "Not implemented: setMeshTetrahedron" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: setMeshTetrahedron");
 }
 
 void Participant::setMeshTetrahedra(precice::string_view meshName, precice::span<const VertexID> ids)
 {
-    std::cout << "Not implemented: setMeshTetrahedra" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: setMeshTetrahedra");
 }
 
 // Advanced data methods
 bool Participant::requiresGradientDataFor(precice::string_view meshName, precice::string_view dataName) const
 {
-    std::cout << "Not implemented: requiresGradientDataFor" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: requiresGradientDataFor");
     return false;
 }
 
@@ -227,7 +236,7 @@ void Participant::writeGradientData(
     precice::span<const double>   gradients
 )
 {
-    std::cout << "Not implemented: writeGradientData" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: writeGradientData");
 }
 
 void Participant::mapAndReadData(
@@ -238,7 +247,7 @@ void Participant::mapAndReadData(
     precice::span<double>       values
 ) const
 {
-    std::cout << "Not implemented: mapAndReadData" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: mapAndReadData");
 }
 
 void Participant::writeAndMapData(
@@ -248,13 +257,13 @@ void Participant::writeAndMapData(
     precice::span<const double> values
 )
 {
-    std::cout << "Not implemented: writeAndMapData" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: writeAndMapData");
 }
 
 // Direct access methods
 void Participant::setMeshAccessRegion(precice::string_view meshName, precice::span<const double> boundingBox) const
 {
-    std::cout << "Not implemented: setMeshAccessRegion" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: setMeshAccessRegion");
 }
 
 void Participant::getMeshVertexIDsAndCoordinates(
@@ -263,7 +272,7 @@ void Participant::getMeshVertexIDsAndCoordinates(
     precice::span<double>   coordinates
 ) const
 {
-    std::cout << "Not implemented: getMeshVertexIDsAndCoordinates" << std::endl;
+    MINIMALCOUPLER_WARNING("Not implemented: getMeshVertexIDsAndCoordinates");
 }
 
 } // namespace precice

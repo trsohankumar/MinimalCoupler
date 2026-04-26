@@ -8,6 +8,14 @@
 #include "logger.hpp"
 
 namespace MinimalCoupler {
+/**
+ * @brief Implements the Aitken under-relaxation for accelerating convergence during implicit coupling
+ * 
+ * Used in each iteration to dynamically update omega using the
+ * Aitken formula based on current and previous residuals.
+ * Convergence is declared when the relative residual norm
+ * drops below a tolerance, or the iteration limit is reached.
+ */
 class Aitken {
 public:
     Aitken();

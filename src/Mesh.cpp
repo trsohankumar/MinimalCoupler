@@ -27,6 +27,7 @@ void Mesh::addDataToMesh(const std::string& dataName, int timeWindow, std::vecto
     if (inputData.empty()) {
         inputData.resize(_vertices.size() * _dimensions, 0.0);
     }
+
     _dataFields[dataName][timeWindow] = std::move(inputData);
 }
 
@@ -43,16 +44,6 @@ void Mesh::setMeshDimensions(int dimensions)
 size_t Mesh::getVertexCount() const
 {
     return _vertices.size();
-}
-
-void Mesh::allocateDataFields()
-{
-    size_t dataSize = _vertices.size() * _dimensions;
-    for (auto& [name, windowMap] : _dataFields) {
-        for (auto& [window, data] : windowMap) {
-            data.resize(dataSize, 0.0);
-        }
-    }
 }
 
 const std::vector<Point>& Mesh::getMeshVertices() const

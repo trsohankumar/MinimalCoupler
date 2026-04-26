@@ -13,24 +13,14 @@ jobs:
               run: |
                 sed -i 's/TIME_WINDOW_SIZE .*/TIME_WINDOW_SIZE      = 0.2;/' src/constants.hpp
 
-            - name: Build and install library
-              run: | 
-                mkdir build && cd build
-                cmake .. -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
-                make
-                cmake --install . --prefix ${{github.workspace}}/install
-
-            - name: Build solverdummy
+            - name: Build
               run: |
-                cd tests
-                mkdir build && cd build
-                cmake .. -DCMAKE_PREFIX_PATH=${{ github.workspace }}/install
-                make
+                cmake -B build
+                cmake --build build
 
             - name: Run smoke test
               run: |
-                cd tests/build
-                ./solverdummy Fluid 2>&1 | tee fluid.log &
-                ./solverdummy Solid 2>&1 | tee solid.log
+                ./build/tests/solverdummy Fluid 2>&1 | tee fluid.log &
+                ./build/tests/solverdummy Solid 2>&1 | tee solid.log
                 grep -q "Closing C++ solver dummy" fluid.log
                 grep -q "Closing C++ solver dummy" solid.log

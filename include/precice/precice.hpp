@@ -1,10 +1,6 @@
 #pragma once
 
-#include "precice/Participant.hpp"
-#include <string>
-
-namespace precice {
-
-std::string getVersionInformation();
-
-}
+#include <precice/Exceptions.hpp>
+#include <precice/Participant.hpp>
+#include <precice/Version.h>
+#include <precice/span.hpp>

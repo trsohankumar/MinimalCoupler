@@ -8,7 +8,7 @@
 
 #include "Aitken.hpp"
 #include "Mesh.hpp"
-#include "precice/types.hpp"
+#include "precice/Types.hpp"
 
 namespace MinimalCoupler {
 
@@ -83,10 +83,13 @@ private:
     void couplingSchemeAdvance();
 
     void openConvergenceLog();
+    void writeConvergenceEntry();
     void writeWatchpointEntry(double time, int window);
+    void setupWatchPoint();
 
     bool               _requiresWritingCheckPoint;
     bool               _requiresReadingCheckPoint;
+    bool               _timeWindowComplete;
     double             _maxTime;
     double             _timeWindowSize;
     int                _rank;
