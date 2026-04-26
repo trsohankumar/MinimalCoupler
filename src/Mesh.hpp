@@ -1,6 +1,6 @@
 #pragma once
 #include "constants.hpp"
-#include "precice/types.hpp"
+#include "precice/Types.hpp"
 #include <map>
 #include <string>
 #include <unordered_map>
