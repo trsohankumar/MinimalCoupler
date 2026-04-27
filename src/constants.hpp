@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * 
+ * @brief Contains constants and configurations that match the
+ * perpedicular flaps tutorial.
+ */
 namespace MinimalCoupler::Constants {
 
 const double MAX_TIME              = 5.0;

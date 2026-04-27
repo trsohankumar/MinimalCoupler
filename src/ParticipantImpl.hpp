@@ -11,7 +11,17 @@
 #include "precice/Types.hpp"
 
 namespace MinimalCoupler {
-
+/**
+ * @brief Implements a pariticpant that can couple the perpendicular flaps
+ * tutorial.
+ * 
+ * The class is an implementation from scratch with the goal to identify 
+ * the minimal functionality that must be provided by a librariy to 
+ * support serial implicit coupling while implementing the preCICE API
+ * 
+ * The class only implements a subset of the participant functions
+ * that are necessary for the perpendicular flaps tutorials.
+ */
 class ParticipantImplementation {
 public:
     ParticipantImplementation(

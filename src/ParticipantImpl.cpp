@@ -43,9 +43,6 @@ ParticipantImplementation::ParticipantImplementation(
         _remoteParticipantDataName = "Force";
 
         constructSolidParticipantMeshes();
-
-        // Set up loggin to a file
-        Logger::getInstance().setLogFile("Solid.log");
     } else {
         _remoteParticipantName     = "Solid";
         _participantMeshName       = _participantName + "-Mesh";
@@ -54,9 +51,6 @@ ParticipantImplementation::ParticipantImplementation(
         _remoteParticipantDataName = "Displacement";
 
         constructFluidParticipantMeshes();
-
-        // setup logging into a file
-        Logger::getInstance().setLogFile("Fluid.log");
     }
     MINIMALCOUPLER_INFO("I am participant ", _participantName);
     MINIMALCOUPLER_INFO("My remote participant is ", _remoteParticipantName);

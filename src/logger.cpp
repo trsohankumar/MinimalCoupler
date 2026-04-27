@@ -13,25 +13,12 @@ void Logger::setLogLevel(LogLevel level)
     minLevel_ = level;
 }
 
-void Logger::setLogFile(const std::string& filename)
-{
-    if (logFile_.is_open()) {
-        logFile_.close();
-    }
-    logFile_.open(filename);
-}
-
 Logger::Logger()
     : minLevel_(LogLevel::INFO)
 {
 }
 
-Logger::~Logger()
-{
-    if (logFile_.is_open()) {
-        logFile_.close();
-    }
-}
+Logger::~Logger() = default;
 
 std::string Logger::levelStr(LogLevel level) const
 {

@@ -6,6 +6,9 @@
 #include <sys/socket.h>
 #include <vector>
 
+/**
+ * @brief Contains utility functions that are used throughout the library
+ */
 namespace MinimalCoupler::Utils {
 
 // Math utility functions
