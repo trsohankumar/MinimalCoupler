@@ -112,16 +112,6 @@ double Participant::getMaxTimeStepSize() const
     return _impl->getMaxTimeStepSize();
 }
 
-void Participant::startProfilingSection(precice::string_view name)
-{
-    MINIMALCOUPLER_WARNING("Not implemented: startProfilingSection");
-}
-
-void Participant::stopLastProfilingSection()
-{
-    MINIMALCOUPLER_WARNING("Not implemented: stopLastProfilingSection");
-}
-
 // Constructor with MPI communicator
 Participant::Participant(
     precice::string_view participantName,
@@ -151,11 +141,6 @@ bool Participant::requiresMeshConnectivityFor(precice::string_view meshName) con
 {
     MINIMALCOUPLER_WARNING("Not implemented: requiresMeshConnectivityFor");
     return false;
-}
-
-void Participant::resetMesh(precice::string_view meshName)
-{
-    MINIMALCOUPLER_WARNING("Not implemented: resetMesh");
 }
 
 VertexID Participant::setMeshVertex(precice::string_view meshName, precice::span<const double> position)
@@ -237,27 +222,6 @@ void Participant::writeGradientData(
 )
 {
     MINIMALCOUPLER_WARNING("Not implemented: writeGradientData");
-}
-
-void Participant::mapAndReadData(
-    precice::string_view        fromMeshName,
-    precice::string_view        dataName,
-    precice::span<const double> positions,
-    double                      relativeReadTime,
-    precice::span<double>       values
-) const
-{
-    MINIMALCOUPLER_WARNING("Not implemented: mapAndReadData");
-}
-
-void Participant::writeAndMapData(
-    precice::string_view        meshName,
-    precice::string_view        dataName,
-    precice::span<const double> positions,
-    precice::span<const double> values
-)
-{
-    MINIMALCOUPLER_WARNING("Not implemented: writeAndMapData");
 }
 
 // Direct access methods
