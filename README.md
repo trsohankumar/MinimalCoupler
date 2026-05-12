@@ -8,7 +8,7 @@ The library is hardcoded for the [perpendicular-flap tutorial](https://precice.o
 
 ## How It Works
 
-The public headers in `include/precice/` are copied verbatim from preCICE, so the API exposed to solvers is identical. The internal implementation is a complete rewrite that replaces preCICE's general coupling machinery with a minimal, hardcoded configuration for the perpendicular-flap setup.
+The public headers in `include/precice/` are copied verbatim from preCICE v3.1.1, so the API exposed to solvers is identical. The internal implementation is a complete rewrite that replaces preCICE's general coupling machinery with a minimal, hardcoded configuration for the perpendicular-flap setup.
 
 Because the exported symbols match, any solver already compiled against preCICE can use MinimalCoupler at runtime via `LD_PRELOAD` without recompilation.
 
@@ -57,7 +57,6 @@ Standard CMake build:
 
 ```bash
 cmake -B build
-cmake --build build
 ```
 
 ## Using with LD_PRELOAD
